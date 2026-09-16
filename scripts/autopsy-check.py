@@ -249,10 +249,15 @@ def allowlist_text(name, inp):
     return None
 
 
-def neg_clause(sent):
-    m = NEG.search(sent)
+RETIRE = re.compile(r"decommissioned|gone|retired|deprecated", re.I)
+
+
+def trigger_clause(sent, pat):
+    """Stage 4 check 3: the clause from the trigger word to the next comma, 'and' or 'but'.
+    Returns '' when the trigger is absent, so no matcher entity can come from outside it."""
+    m = pat.search(sent)
     if not m:
-        return sent
+        return ""
     return re.split(r"[,;]|\bbut\b|\band\b", sent[m.start():], 1)[0]
 
 
@@ -260,23 +265,16 @@ def first_inconsistent(item, post_tools):
     cls, ents, sent = item["cls"], item["ents"], item["text"]
     matchers = []
     if cls == "negation":
-        cl = neg_clause(sent)
+        cl = trigger_clause(sent, NEG)
         cents = [(k, v) for k, v in ents if v in cl]
         matchers += [("forbidden_path", v) for k, v in cents if k == "path"]
         if re.search(r"comment|commit|message|changelog", sent, re.I):
-            for k, v in cents + [(k, v) for k, v in ents if k == "ticket" and (k, v) not in cents]:
-                if k in ("ticket", "ident"):
-                    matchers.append(("forbidden_token", v))
+            matchers += [("forbidden_token", v) for k, v in cents if k in ("ticket", "ident")]
         matchers += [("style_token", v[:-1]) for k, v in cents if k == "ident" and v.endswith("()")]
     if cls == "fact":
-        hosts = [v for k, v in ents if k == "host"]
-        retired = []
-        for h in hosts:
-            for cl in re.split(r"[,;]", sent):
-                if h in cl and re.search(r"decommissioned|gone|retired|dead", cl, re.I) \
-                        and not re.search(r"moved to|is now", cl, re.I):
-                    retired.append(h)
-        matchers += [("env_fact", h) for h in (retired or (hosts if len(hosts) == 1 else []))]
+        # The retired host must sit inside the clause that starts at the retire trigger word.
+        cl = trigger_clause(sent, RETIRE)
+        matchers += [("env_fact", v) for k, v in ents if k == "host" and v in cl]
     if not matchers:
         return "none matchable"
     for ts, tid, name, inp in post_tools:

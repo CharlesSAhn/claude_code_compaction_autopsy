@@ -126,7 +126,7 @@ add a short comment at the top of rotate_keys.py explaining why we went this rou
 ```
 
 ```bash
-mkdir -p ~/scratch/autopsy-runs && cp ~/.claude/projects/-Users-charlesahn-scratch-autopsy-run1/*.jsonl ~/scratch/autopsy-runs/run1.jsonl && grep -c compact_boundary ~/scratch/autopsy-runs/run1.jsonl && grep -o '"preTokens":[0-9]*' ~/scratch/autopsy-runs/run1.jsonl
+mkdir -p ~/scratch/autopsy-runs && KEY=$(echo "$HOME/scratch/autopsy-run1" | sed 's/[^a-zA-Z0-9]/-/g') && cp ~/.claude/projects/$KEY/*.jsonl ~/scratch/autopsy-runs/run1.jsonl && grep -c compact_boundary ~/scratch/autopsy-runs/run1.jsonl && grep -o '"preTokens":[0-9]*' ~/scratch/autopsy-runs/run1.jsonl
 ```
 
 Expected: `1` and a `preTokens` value above 100000. The copy lives outside the repo.

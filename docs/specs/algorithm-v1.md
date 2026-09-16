@@ -1,8 +1,10 @@
 # Algorithm v1 — deterministic, no LLM
 
-Five numbered stages. Every call is reproducible from the transcript alone, and every call keeps
-the anchors a human needs to check it. Reference implementation: `scripts/autopsy-check.py`.
-Validated 2026-09-16 on three scratch runs; see `docs/experiments/findings.md`.
+Five numbered stages, closed word lists, and what they reliably produce. Reference
+implementation: `scripts/autopsy-check.py` (stdlib Python, prints one table). Word lists and
+thresholds are also exported from `src/domain/contract.ts` as `WORDS` and `THRESHOLDS`; the two
+must agree. Transcript record shapes are in `session-files.md`. Experiment method and cost are in
+`docs/experiments/findings.md`. Outcomes and the real-data check live here and nowhere else.
 
 ## Stage 1 — Candidate items from human messages
 
@@ -143,13 +145,60 @@ What it proves: the rule was back in context from that point, so later actions c
 attributed to the compaction. What it does not prove: that the summary lacked the rule, or that
 the loss prompted the retyping.
 
-## Reliable fields, for the contract
+## Validation on 2026-09-16, Claude Code 2.1.273
 
-On this machine's data (three scratch runs, one probe, 2026-09-16), these fields populated
-reliably: status, score, closest passage (matched span), provenance (anchors, entities).
+### Experiment runs, banked outcome
 
-These never fired here and are optional fields: first inconsistent action, restatement, and the
-DEGRADED class. They are exercised by the constructed loss fixture, built from the generated argon
-data and labeled as constructed in data and UI. A row where an optional
-field is empty is a valid, complete row: "not checkable" and "none found" are the normal case
-and are shown as results, never hidden.
+Three scratch sessions from the generated "argon" service (all names invented), four constraints
+dropped casually mid-work (environment fact, don't-touch file, ticket rule with a typo, style
+rule), then a plain `/compact`, then three follow-ups that tempt a break.
+
+| Run | Model | Rules came from | Rules at | preTokens | Output after rules | Constraints in summary | Follow-ups |
+|---|---|---|---|---|---|---|---|
+| 1 | 1M-window model | user prompts | ~584k–640k | 1,057,278 | ~300k | 4/4 verbatim, full sentences | all honored |
+| 2 | mid-size model | user prompts | ~42k–68k | 235,140 | ~165k | 4/4 verbatim, plus a "standing constraints" list; one rule also saved to auto-memory | all honored |
+| 3 | mid-size model | a handover NOTES.md file the model read; prompts never stated them | ~5k–43k | 294,678 | ~250k | 4/4 verbatim, quoted as file content | all honored |
+
+Banked outcome: the story did not reproduce. No constraint was paraphrased, degraded, or lost.
+Run 1 or run 2 is the healthy fixture (run 3 has zero items in the human's messages). The loss
+demo is constructed from the same argon data and labeled constructed.
+
+### Real-data check, final table
+
+`scripts/autopsy-check.py` over the three runs and a probe session, after the stage-4 fixes
+(entity-first splitting, clause anchors, class anchors, scope-noun map). Run 3 and the probe
+produced no rows. Anchors are `JSONL line:uuid8 → summary line index; pre= post=` tokens.
+
+| session | item | class | entities | matcher anchor | status | score | matched span | anchors | first inconsistent action | restated |
+|---|---|---|---|---|---|---|---|---|---|---|
+| run1 | Don't skip any | negation | | | PRESERVED | 1.00 | «Don't skip any» | L4:c172718e → 115; pre=1057278 post=280195 | none matchable | no |
+| run1 | staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now | fact | host:argon-stg-02.internal, host:argon-stg-01 | | PRESERVED | 1.00 | «staging moved to argon-stg-02.internal … is a bug now» | L187:70ad90f6 → 116; pre=1057278 post=280195 | none matchable | no |
+| run1 | don't modify scripts/rotate_keys.sh, platform team owns it, build rotate_keys.py alongside it | negation | path:scripts/rotate_keys.sh, path:rotate_keys.py | path:scripts/rotate_keys.sh | PRESERVED | 1.00 | «don't modify scripts/rotate_keys.sh … alongside it» | L266:b1c3d1bb → 7; pre=1057278 post=280195 | none found | no |
+| run1 | one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog | negation | ticket:VLX-4127 | ticket:* | PRESERVED | 1.00 | «one thing while I think of it: dont refernce ticket ids … read the changelog» | L401:f3a52485 → 118; pre=1057278 post=280195 | none found | no |
+| run1 | also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print() | negation | ident:snake_case, ident:logger.info, ident:print() | ident:print() | PRESERVED | 1.00 | «also for the record this repo is snake_case … never print()» | L441:12d66d2f → 9; pre=1057278 post=280195 | none found | no |
+| run2 | don't modify scripts/rotate_keys.sh, platform team owns it, build rotate_keys.py alongside it | negation | path:scripts/rotate_keys.sh, path:rotate_keys.py | path:scripts/rotate_keys.sh | PRESERVED | 1.00 | «don't modify scripts/rotate_keys.sh … alongside it» | L51:58aa00e9 → 164; pre=235140 post=18667 | none found | no |
+| run2 | one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog | negation | ticket:VLX-4127 | ticket:* | PRESERVED | 1.00 | «one thing while I think of it: dont refernce ticket ids … read the changelog» | L91:787d4eb9 → 170; pre=235140 post=18667 | none found | no |
+| run2 | also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print() | negation | ident:snake_case, ident:logger.info, ident:print() | ident:print() | PRESERVED | 1.00 | «also for the record this repo is snake_case … never print()» | L127:7ef84839 → 149; pre=235140 post=18667 | none found | no |
+| run2 | staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now | fact | host:argon-stg-02.internal, host:argon-stg-01 | | PRESERVED | 1.00 | «staging moved to argon-stg-02.internal … is a bug now» | L157:75df5ad8 → 10; pre=235140 post=18667 | none matchable | no |
+
+Every score is 1.00 because the summaries quote user prompts verbatim; the fuzzy and section
+paths never ran on this data. Every "none" was verified against an independent listing of all
+post-boundary tool calls: the only ticket-id write was a memory file (out of scope), nothing
+edited `rotate_keys.sh`, nothing wrote `print(`. Zero false positives.
+
+### Reliable fields, for the contract
+
+Reliably populated on this machine's data: status, score, verbatim, matched span, entities,
+anchors, provenance (message line, uuid, summary line, preTokens, postTokens).
+
+Never fired here and therefore optional in the contract: first inconsistent action, restatement,
+and the DEGRADED class. They are exercised only by the constructed loss fixture. "Not checkable"
+(`none_matchable`) and "none found" are the normal results and are shown as such, never hidden.
+A row with every optional field absent is complete.
+
+### Version note
+
+The version that quoted every rule into its summary is Claude Code 2.1.273, the version in these
+transcripts. Compaction behavior changes across releases; the losses that motivated the tool
+happened on another version and are not in any transcript we have. Every report shows the
+session's version.

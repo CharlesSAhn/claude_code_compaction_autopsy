@@ -50,6 +50,12 @@ export interface Session {
   model: string
   messages: Message[]
   compactions: Compaction[]
+  /**
+   * Pre-labeled items (stage 1 output). Fixtures carry them, so extraction is the one stage the
+   * demo skips. When absent, analyze runs extraction itself. Survival, evidence, downstream, and
+   * restatement always run on the caller's side.
+   */
+  items?: Item[]
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +183,15 @@ export interface Report {
   compactionIndex: number
   items: ItemReport[]
   closing: typeof CLOSING_LINE
+}
+
+/**
+ * What analyze returns: the session and one report per compaction. Never fixture content;
+ * fixtures are Sessions, and the expected reports live in test files the analyzer cannot see.
+ */
+export interface AnalyzedSession {
+  session: Session
+  reports: Report[]
 }
 
 // ---------------------------------------------------------------------------

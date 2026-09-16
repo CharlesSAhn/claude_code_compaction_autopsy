@@ -31,6 +31,16 @@ Enforced by `src/specs/architecture.test.ts`. If a change needs a rule to bend, 
 
 Test files (`*.test.ts`, `*.test.tsx`) are exempt from R1 and R2, not from R3.
 
+## The three claims (contract v1, `src/domain/contract.ts`, `docs/contracts/contract.md`)
+
+- LOST is a status about the summary text only, with DEGRADED for partial loss and PRESERVED.
+- INCONSISTENT is the contract's fixed phrase `INCONSISTENT_LABEL`, status-neutral, applied to
+  any item whose downstream result is matched. Quote it only in the contract; refer to it by
+  name everywhere else.
+- CAUSED is never asserted. No type, field, flag, or switch. Every downstream result prints
+  `CLOSING_LINE`. Do not write "caused", "because of the compaction", or any equivalent in
+  code, docs, fixtures, or UI text.
+
 ## Guards
 
 - Never bypass a hook, by any means. That includes `--no-verify`, changing `core.hooksPath`,

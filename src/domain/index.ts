@@ -7,3 +7,4 @@
 export const DOMAIN_NAME = 'Compaction Autopsy'
 
 export * from './contract'
+export { analyze } from './analyze'

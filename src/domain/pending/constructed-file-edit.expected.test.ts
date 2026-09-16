@@ -1,5 +1,5 @@
 /**
- * Expected report for the constructed-file-edit fixture. Red until src/domain exports analyze.
+ * Expected report for the constructed-file-edit fixture. Red until analyze is implemented (today it throws "not implemented").
  *
  * The rule vanished, the file got edited, the user re-typed it: the file rule is LOST (its anchor
  * scripts/rotate_keys.sh appears nowhere in the summary; rotate_keys.py surviving does not rescue it,
@@ -11,16 +11,10 @@
  * the contract it implements is the one frozen at the end of that task. Nothing here is typed by hand.
  */
 import { describe, expect, it } from 'vitest'
-import { CLOSING_LINE, type AnalyzedSession, type Session } from '../contract'
+import { CLOSING_LINE, type Session } from '../contract'
+import { analyze } from '../index'
 import { fixtures } from '../../fixtures/index.ts'
 
-type Analyze = (s: Session) => AnalyzedSession
-
-async function loadAnalyze(): Promise<Analyze> {
-  const mod = (await import('../index')) as { analyze?: Analyze }
-  expect(mod.analyze, 'src/domain does not export analyze yet').toBeDefined()
-  return mod.analyze as Analyze
-}
 
 const session = fixtures.find((s) => s.id === 'constructed-file-edit') as Session
 
@@ -219,8 +213,8 @@ const EXPECTED = {
 } as const
 
 describe('constructed-file-edit, expected report', () => {
-  it('one report for the one boundary, one row per pre-labeled item, the closing line on it', async () => {
-    const { reports } = (await loadAnalyze())(session)
+  it('one report for the one boundary, one row per pre-labeled item, the closing line on it', () => {
+    const { reports } = analyze(session)
     expect(reports).toHaveLength(1)
     expect(reports[0].sessionId).toBe('constructed-file-edit')
     expect(reports[0].compactionIndex).toBe(0)
@@ -228,8 +222,8 @@ describe('constructed-file-edit, expected report', () => {
     expect(reports[0].items.map((r) => r.item.id).sort()).toEqual(Object.keys(EXPECTED).sort())
   })
 
-  it.each(Object.entries(EXPECTED))('%s: survival, downstream, restatement equal the reference', async (id, want) => {
-    const { reports } = (await loadAnalyze())(session)
+  it.each(Object.entries(EXPECTED))('%s: survival, downstream, restatement equal the reference', (id, want) => {
+    const { reports } = analyze(session)
     const got = reports[0].items.find((r) => r.item.id === id)
     expect(got, id).toBeDefined()
     expect(got?.item).toEqual(session.items?.find((it) => it.id === id))

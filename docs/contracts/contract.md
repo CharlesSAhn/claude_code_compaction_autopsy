@@ -51,6 +51,11 @@ the default.
 ## Downstream action
 
 - Any assistant `tool_use` after the boundary, MCP calls included. Not only file edits.
+- What stage 4 sees is `Message.action` (`ToolAction`): tool name, tool_use id, and, as
+  present, `filePath`, `command`, `addedText` (a Write's content; an Edit's new lines not in
+  its old string), `mcpInput` (the MCP input as JSON). Each text is capped by the adapter at
+  4000 characters and redacted like every other string. The 200-character `excerpt` is for the
+  timeline only and is never matched on.
 - Checks, in order (algorithm stage 4): only negation items get anchors; anchors are concrete
   entities in the trigger clause, else one class anchor; scope is the union of what the
   sentence's scope nouns map to (`WORDS.scopeNouns`), or every kind when there is no noun;

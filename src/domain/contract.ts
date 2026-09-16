@@ -21,7 +21,21 @@ export type Provenance =
 
 export type MessageKind = 'human' | 'assistant' | 'tool_use' | 'tool_result'
 
-/** A sanitized transcript record, enough for a timeline. Never the raw record. */
+/**
+ * What stage 4 inspects on a tool call. Present on tool_use messages only. Bounded by the
+ * redactor, never the raw input: file path, command text, added text (Write content, Edit
+ * new_string lines absent from old_string), or the MCP input as JSON.
+ */
+export interface ToolAction {
+  tool: string
+  toolUseId: string
+  filePath?: string
+  command?: string
+  addedText?: string
+  mcpInput?: string
+}
+
+/** A sanitized transcript record, enough for a timeline and for stage 4. Never the raw record. */
 export interface Message {
   uuid: string
   ts: string
@@ -29,6 +43,7 @@ export interface Message {
   kind: MessageKind
   tool?: string
   excerpt: string
+  action?: ToolAction
 }
 
 export type CompactionTrigger = 'auto' | 'manual'

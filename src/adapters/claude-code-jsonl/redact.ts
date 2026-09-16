@@ -30,7 +30,21 @@ export function redactSession(session: Session, opts: RedactOptions): Session {
   const r = (s: string) => redactString(s, opts, session.id)
   return {
     ...session,
-    messages: session.messages.map((m) => ({ ...m, excerpt: r(m.excerpt) })),
+    messages: session.messages.map((m) => ({
+      ...m,
+      excerpt: r(m.excerpt),
+      ...(m.action
+        ? {
+            action: {
+              ...m.action,
+              ...(m.action.filePath !== undefined ? { filePath: r(m.action.filePath) } : {}),
+              ...(m.action.command !== undefined ? { command: r(m.action.command) } : {}),
+              ...(m.action.addedText !== undefined ? { addedText: r(m.action.addedText) } : {}),
+              ...(m.action.mcpInput !== undefined ? { mcpInput: r(m.action.mcpInput) } : {}),
+            },
+          }
+        : {}),
+    })),
     compactions: session.compactions.map((c) => ({ ...c, summary: { ...c.summary, lines: c.summary.lines.map(r) } })),
     ...(session.items ? { items: session.items.map((it) => ({ ...it, text: r(it.text) })) } : {}),
   }

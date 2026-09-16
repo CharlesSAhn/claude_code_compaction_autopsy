@@ -46,6 +46,14 @@ export function validateSession(x: unknown): Session {
     uuids.add(str(m, 'uuid', mw)); str(m, 'ts', mw); num(m, 'line', mw)
     if (!MESSAGE_KINDS.has(String(m.kind))) fail(`${mw}.kind invalid`)
     if (str(m, 'excerpt', mw).length > 200) fail(`${mw}.excerpt exceeds 200 characters`)
+    if (m.action !== undefined) {
+      if (m.kind !== 'tool_use') fail(`${mw}.action only on tool_use messages`)
+      if (!isObj(m.action)) fail(`${mw}.action must be an object`)
+      str(m.action, 'tool', `${mw}.action`); str(m.action, 'toolUseId', `${mw}.action`)
+      for (const k of ['filePath', 'command', 'addedText', 'mcpInput']) {
+        if (m.action[k] !== undefined && typeof m.action[k] !== 'string') fail(`${mw}.action.${k} must be a string`)
+      }
+    }
   })
 
   if (!Array.isArray(x.compactions) || x.compactions.length === 0) fail('session.compactions must be non-empty')

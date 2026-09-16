@@ -26,7 +26,9 @@ messages ───────────────────────�
   the assistant `tool_use` records there and produces `DownstreamEvidence`; stage 5 scans the
   human prompts there for a `Restatement`.
 
-An item never crosses a boundary. A session with two compactions yields two `Report`s.
+Before and after are decided by timestamp: ISO strings compare lexicographically, and the
+boundary record has its own `ts`. An item never crosses a boundary. A session with two
+compactions yields two `Report`s (the reference script handles the first boundary only).
 
 ## Types, one line each
 
@@ -59,7 +61,8 @@ fixtures/*.json  committed Session with pre-labeled items ───────�
 specs / pending tests            expected reports per fixture, where the analyzer cannot see them
 ```
 
-Extraction (stage 1) is the one stage the fixtures skip, by carrying pre-labeled items. Survival
+Extraction (stage 1, items and their anchors) is the one stage the fixtures skip, by carrying
+pre-labeled items; `analyze` trusts pre-labeled items and never recomputes them. Survival
 scoring, evidence, downstream matching, and restatement run in the browser on load; that is what
 the demo demonstrates. Real data enters through the same door with no items, and analyze
 extracts them.

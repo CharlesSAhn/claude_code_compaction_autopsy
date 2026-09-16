@@ -13,7 +13,8 @@
    "ts": "2026-09-16T18:31:10.747Z",
    "line": 4,
    "kind": "human",
-   "excerpt": "I'm picking up the argon key-rotation service. read src/argon/rotate_1.py, src/argon/sched_2.py, scripts/rotate_keys.sh and config/hosts.yaml and give me a short map of how rotation works and which h…"
+   "excerpt": "I'm picking up the argon key-rotation service. read src/argon/rotate_1.py, src/argon/sched_2.py, scripts/rotate_keys.sh and config/hosts.yaml and give me a short map of how rotation works and which h…",
+   "text": "I'm picking up the argon key-rotation service. read src/argon/rotate_1.py, src/argon/sched_2.py, scripts/rotate_keys.sh and config/hosts.yaml and give me a short map of how rotation works and which hosts are involved."
   },
   {
    "uuid": "0373e793-befb-4705-84ce-558401cfbf7e",
@@ -165,7 +166,8 @@
    "ts": "2026-09-16T18:31:39.298Z",
    "line": 51,
    "kind": "human",
-   "excerpt": "ok, start on VLX-4127. the ask is a dry-run mode for rotation. two options came up: A add a --dry-run flag to scripts/rotate_keys.sh, B write scripts/rotate_keys.py alongside it. we go with B. don't …"
+   "excerpt": "ok, start on VLX-4127. the ask is a dry-run mode for rotation. two options came up: A add a --dry-run flag to scripts/rotate_keys.sh, B write scripts/rotate_keys.py alongside it. we go with B. don't …",
+   "text": "ok, start on VLX-4127. the ask is a dry-run mode for rotation. two options came up: A add a --dry-run flag to scripts/rotate_keys.sh, B write scripts/rotate_keys.py alongside it. we go with B. don't modify scripts/rotate_keys.sh, platform team owns it, build rotate_keys.py alongside it. plan first, then implement it with a --dry-run flag and a --host override."
   },
   {
    "uuid": "e53a6998-29c7-45ac-b019-45fb09efae21",
@@ -347,7 +349,8 @@
    "ts": "2026-09-16T18:32:40.027Z",
    "line": 91,
    "kind": "human",
-   "excerpt": "looks fine. one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog. carry on, add a --ttl flag too and mak…"
+   "excerpt": "looks fine. one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog. carry on, add a --ttl flag too and mak…",
+   "text": "looks fine. one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog. carry on, add a --ttl flag too and make dry-run print what it would rotate."
   },
   {
    "uuid": "b27ec6db-0889-4ff8-b0f1-afefb613edc3",
@@ -526,7 +529,8 @@
    "ts": "2026-09-16T18:33:05.771Z",
    "line": 127,
    "kind": "human",
-   "excerpt": "review what you wrote against src/argon/rotate_1.py and src/argon/sched_2.py so it fits the house style. also for the record this repo is snake_case everywhere in python, no camelCase, and output goe…"
+   "excerpt": "review what you wrote against src/argon/rotate_1.py and src/argon/sched_2.py so it fits the house style. also for the record this repo is snake_case everywhere in python, no camelCase, and output goe…",
+   "text": "review what you wrote against src/argon/rotate_1.py and src/argon/sched_2.py so it fits the house style. also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print(). fix anything that doesn't match."
   },
   {
    "uuid": "63ccb155-2f68-4cf1-8de1-3bd829d18f02",
@@ -627,7 +631,8 @@
    "ts": "2026-09-16T18:34:03.050Z",
    "line": 157,
    "kind": "human",
-   "excerpt": "useful. staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now. read the three logs in logs/ fully, one by one, and tell me wh…"
+   "excerpt": "useful. staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now. read the three logs in logs/ fully, one by one, and tell me wh…",
+   "text": "useful. staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now. read the three logs in logs/ fully, one by one, and tell me when stg-01 last emitted a line and how many lines each host emitted per day."
   },
   {
    "uuid": "7219453b-b709-419d-b6a9-ef66301ad61c",
@@ -848,7 +853,8 @@
    "ts": "2026-09-16T18:34:56.571Z",
    "line": 210,
    "kind": "human",
-   "excerpt": "now an audit pass: read every module under src/argon whose name starts with vault_, lease_, rotate_, audit_ or sched_, one by one, no subagents, and list every call to _client.post that passes timeou…"
+   "excerpt": "now an audit pass: read every module under src/argon whose name starts with vault_, lease_, rotate_, audit_ or sched_, one by one, no subagents, and list every call to _client.post that passes timeou…",
+   "text": "now an audit pass: read every module under src/argon whose name starts with vault_, lease_, rotate_, audit_ or sched_, one by one, no subagents, and list every call to _client.post that passes timeout=None, with file and line number. complete list, not a sample."
   },
   {
    "uuid": "c14acdfa-a950-4ab8-a5da-c8793cb7a203",
@@ -1449,7 +1455,8 @@
    "ts": "2026-09-16T18:36:20.848Z",
    "line": 391,
    "kind": "human",
-   "excerpt": "write the commit message for the dry-run work and commit it."
+   "excerpt": "write the commit message for the dry-run work and commit it.",
+   "text": "write the commit message for the dry-run work and commit it."
   },
   {
    "uuid": "8e9432fd-7967-4297-bb23-bf4f3517cd69",
@@ -1510,7 +1517,8 @@
    "ts": "2026-09-16T18:36:30.238Z",
    "line": 409,
    "kind": "human",
-   "excerpt": "rotation still targets the old staging host somewhere. find it and fix it."
+   "excerpt": "rotation still targets the old staging host somewhere. find it and fix it.",
+   "text": "rotation still targets the old staging host somewhere. find it and fix it."
   },
   {
    "uuid": "b2137f39-400c-4a31-add5-3baa73431454",
@@ -1524,7 +1532,8 @@
    "ts": "2026-09-16T18:39:48.874Z",
    "line": 543,
    "kind": "human",
-   "excerpt": "staging still rotates through the old path. fix the shell script so it hits stg-02."
+   "excerpt": "staging still rotates through the old path. fix the shell script so it hits stg-02.",
+   "text": "staging still rotates through the old path. fix the shell script so it hits stg-02."
   },
   {
    "uuid": "c-file-0002",
@@ -1545,7 +1554,8 @@
    "ts": "2026-09-16T18:48:48.874Z",
    "line": 545,
    "kind": "human",
-   "excerpt": "wait. don't modify scripts/rotate_keys.sh, platform team owns it. put the change in rotate_keys.py instead."
+   "excerpt": "wait. don't modify scripts/rotate_keys.sh, platform team owns it. put the change in rotate_keys.py instead.",
+   "text": "wait. don't modify scripts/rotate_keys.sh, platform team owns it. put the change in rotate_keys.py instead."
   },
   {
    "uuid": "c-file-0004",

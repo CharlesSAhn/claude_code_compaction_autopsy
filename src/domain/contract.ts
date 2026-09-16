@@ -35,14 +35,17 @@ export interface ToolAction {
   mcpInput?: string
 }
 
-/** A sanitized transcript record, enough for a timeline and for stage 4. Never the raw record. */
+/** A sanitized transcript record, enough for a timeline and for stages 4–5. Never the raw record. */
 export interface Message {
   uuid: string
   ts: string
   line: number
   kind: MessageKind
   tool?: string
+  /** Timeline only, at most LIMITS.excerpt characters. Never matched on. */
   excerpt: string
+  /** Full redacted text of a human prompt; stage 5 matches on it. Present on human messages only. */
+  text?: string
   action?: ToolAction
 }
 
@@ -179,7 +182,10 @@ export interface DownstreamEvidence {
 export interface Restatement {
   messageUuid: string
   ts: string
+  /** Stage-2 overlap of the restating sentence against the item; always computed. */
   score: number
+  /** Which stage-5 rule fired: the score threshold, or all entities plus a negation word. */
+  by: 'score' | 'entities'
 }
 
 // ---------------------------------------------------------------------------
@@ -245,6 +251,30 @@ export const THRESHOLDS: Thresholds = {
   fuzzyMinTokenLength: 6,
 }
 
+/** Sizes the fixtures' expected answers depend on. Part of the contract. */
+export const LIMITS = {
+  itemMinChars: 12,
+  itemMaxChars: 300,
+  tokenMinChars: 3,
+  excerpt: 200,
+  actionText: 4000,
+  hitExcerpt: 120,
+} as const
+
+/** Entity and structure patterns, as regex sources. Part of the contract. */
+export const PATTERNS = {
+  path: String.raw`[\w./-]*[\w-]+\.(?:sh|py|ts|tsx|js|md|yaml|yml|json|txt)\b|\b(?:src|scripts|docs|config|logs)/[\w./-]+`,
+  ticket: String.raw`\b[A-Z]{2,6}-\d{2,6}\b`,
+  host: String.raw`\b[a-z0-9-]+\.(?:internal|local|com|io|net)\b`,
+  /** Both parts at least two characters, so `e.g` is not an identifier. */
+  ident: String.raw`\b[a-z_]{2,}\.[a-z_]{2,}\b|\b[a-z_]+\(\)|\b[a-z]+_[a-z]+\b`,
+  token: String.raw`[a-z0-9_.\-]+(?:\(\))?`,
+  heading: String.raw`^\s*(?:#{1,6}\s+|\d+\.\s+)`,
+  changelogFile: String.raw`^CHANGELOG`,
+  gitCommit: String.raw`\bgit\s+commit\b`,
+  prBody: String.raw`\bgh\s+pr\s+(?:create|edit)\b`,
+} as const
+
 export const WORDS = {
   negation: ["don't", 'dont', 'do not', 'never', 'avoid', 'stop', 'no longer'],
   positive: ['always', 'only', 'must', 'keep', 'use'],
@@ -256,14 +286,21 @@ export const WORDS = {
     host: ['hostname', 'hostnames', 'host name', 'host names'],
     path: ['file path', 'file paths', 'file name', 'file names', 'path', 'paths'],
   },
+  /** Matched as whole words, singular or plural (`\b<noun>s?\b`, case-insensitive). */
   scopeNouns: {
     comment: ['mcp_comment', 'code_comment'],
     'commit message': ['commit'],
     changelog: ['changelog'],
     'pr description': ['pr_body'],
+    'pull request description': ['pr_body'],
     ticket: ['mcp_issue'],
     issue: ['mcp_issue'],
   } satisfies Record<string, ArtifactKind[]>,
+  /** Kinds the forbidden-token matcher may inspect; "every kind" in the docs means these six. */
+  tokenScopeKinds: ['mcp_comment', 'code_comment', 'commit', 'changelog', 'pr_body', 'mcp_issue'] satisfies ArtifactKind[],
+  /** Precedence when one call is in scope under several kinds. */
+  artifactPrecedence: ['mcp_comment', 'mcp_issue', 'commit', 'pr_body', 'changelog', 'code_comment'] satisfies ArtifactKind[],
+  fileTools: ['Write', 'Edit', 'MultiEdit', 'NotebookEdit'],
   structuralHeadings: ['constraint', 'rule', 'instruction', 'feedback', 'standing'],
   mcpReadVerbs: ['get', 'list', 'search', 'read', 'fetch', 'find', 'view', 'query'],
   mcpCommentNames: ['comment', 'issue', 'note'],
@@ -279,6 +316,8 @@ export const WORDS = {
     '.htm': ['<!--'],
   },
   styleTokenFiles: ['.py', '.ts', '.tsx', '.js', '.sh'],
+  /** Removed by normalization. Underscore is kept so identifiers survive. */
+  markdownMarkers: ['*', '#', '>', '`'],
   stopwords: ['the', 'and', 'for', 'that', 'this', 'with', 'like', 'from', 'into', 'are', 'was', 'were',
     'has', 'have', 'its', 'you', 'your', 'our', 'they', 'them', 'then', 'than', 'also', 'just', 'any',
     'all', 'not', 'but', 'can', 'will'],

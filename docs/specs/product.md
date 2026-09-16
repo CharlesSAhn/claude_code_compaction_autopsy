@@ -4,7 +4,7 @@
 
 Claude Code compacts long sessions into a summary. Things the user said can drop out of that
 summary, and later actions can go against them. The user cannot see what was there, what the
-summary kept, or which later action ran without the rule. Two cases from the author: a rule
+summary kept, or which later action went against the rule. Two cases from the author: a rule
 "don't reference ticket info in comments" that did not survive, followed by a Linear comment
 that did exactly that; a rule "don't modify scripts/install.sh" followed by an edit to it.
 
@@ -58,8 +58,8 @@ subagent transcripts; claiming causation; CloudFront, auth, accounts, settings.
 
 ## Honesty
 
-- Demo items are pre-labeled in the fixtures. Extraction (stage 1, finding candidate items in
-  messages) is the one stage the URL does not exercise; it is documented in
+- Demo items are pre-labeled in the fixtures, anchors included. Extraction (stage 1, finding
+  candidate items and their anchors in messages) is the one stage the URL does not exercise; it is documented in
   `docs/specs/algorithm-v1.md` and checked by tests. Survival scoring, evidence, downstream
   matching, and restatement run live in the browser on every load, and the expected results live
   in test files the analyzer cannot see.

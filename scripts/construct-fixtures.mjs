@@ -32,7 +32,7 @@ function dropLines(lines, pattern) {
 }
 
 function human(uuid, line, ts, text) {
-  return { uuid, ts, line, kind: 'human', excerpt: text }
+  return { uuid, ts, line, kind: 'human', excerpt: text, text }
 }
 
 function toolUse(uuid, line, ts, action, excerptText) {
@@ -46,7 +46,8 @@ function toolUse(uuid, line, ts, action, excerptText) {
   s.label = 'Constructed: the ticket survived, the rule about it did not'
   s.provenance = { kind: 'constructed', note: "based on a real event I can't show" }
   s.compactions[0].trigger = 'auto'
-  // Drop every summary line that states the ticket rule; VLX-4127 stays wherever it names the work item.
+  // Drop every summary line that states the ticket rule; VLX-4127 stays where it names the work item
+  // ("Second request (ticket VLX-4127): Implement a dry-run mode…").
   s.compactions[0].summary.lines = dropLines(
     s.compactions[0].summary.lines,
     /ticket ids?|ticket\/issue ids?|no-ticket|no_ticket|refernce|reference ticket|reference internal ticket|feedback_no_ticket|customers read the changelog/i,

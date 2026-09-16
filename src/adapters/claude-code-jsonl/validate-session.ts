@@ -46,6 +46,10 @@ export function validateSession(x: unknown): Session {
     uuids.add(str(m, 'uuid', mw)); str(m, 'ts', mw); num(m, 'line', mw)
     if (!MESSAGE_KINDS.has(String(m.kind))) fail(`${mw}.kind invalid`)
     if (str(m, 'excerpt', mw).length > 200) fail(`${mw}.excerpt exceeds 200 characters`)
+    if (m.text !== undefined) {
+      if (m.kind !== 'human') fail(`${mw}.text only on human messages`)
+      if (typeof m.text !== 'string') fail(`${mw}.text must be a string`)
+    }
     if (m.action !== undefined) {
       if (m.kind !== 'tool_use') fail(`${mw}.action only on tool_use messages`)
       if (!isObj(m.action)) fail(`${mw}.action must be an object`)

@@ -70,7 +70,8 @@ export function toSession(records: RawRecord[], opts: ToSessionOptions): Session
       continue
     }
     if (isHumanPrompt(r)) {
-      messages.push(base(r, 'human', excerpt(textOf(r))))
+      const t = textOf(r)
+      messages.push({ ...base(r, 'human', excerpt(t)), text: cap(t) })
       continue
     }
     if (r.type === 'assistant') {

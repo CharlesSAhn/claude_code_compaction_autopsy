@@ -19,28 +19,38 @@ Entities are extracted before splitting and are never cut by the splitter:
   hyphenated stem and digits (`argon-stg-01` next to `argon-stg-02.internal`)
 - ident: dotted or underscored identifiers and `name()` calls
 
-Sentences split on `.`, `!`, `?` only when followed by whitespace or end of text, and on bullet
-or numbered markers only at line start. A sentence of 12 to 300 characters becomes an item if it
-matches one class:
+Apostrophes are normalized (curly to straight) before trigger matching. Sentences split on `.`,
+`!`, `?` only when followed by whitespace or end of text, and on bullet or numbered markers only
+at line start. A sentence of `LIMITS.itemMinChars` to `LIMITS.itemMaxChars` characters (12 to
+300) becomes an item if it matches one class, with precedence negation, then positive, then fact:
 - negation: `don't | dont | do not | never | avoid | stop | no longer`
 - positive: `always | only | must | keep | use` and at least one entity
 - fact: `moved to | decommissioned | is now | is gone | renamed | deprecated` and at least one entity
 
-Item fields: text, class, entities with kinds, message uuid, timestamp, JSONL line. Duplicate
-normalized text keeps the first occurrence.
+Item fields: `id` (`<compactionIndex>:<origin.line>:<n>`), `compactionIndex`, text, class,
+entities with kinds, anchors (stage 4 steps 1–5, computed here so fixtures can carry them),
+origin (message uuid, timestamp, JSONL line). Duplicate normalized text keeps the first
+occurrence. An identifier entity needs two characters on each side of its dot (`e.g` is none).
 
 ## Stage 2 — Survival score against the summary
 
-Normalize both sides: lowercase, strip backticks, straight and curly quotes, apostrophes
-(so `dont` equals `don't`), markdown markers, collapse whitespace.
+Normalize both sides: lowercase; remove backticks, straight and curly quotes, apostrophes, and
+`WORDS.markdownMarkers` (`*` `#` `>` and backtick; underscores are kept); collapse whitespace.
+`dont` equals `don't`; `rotate_keys.py` stays itself.
 
-1. Verbatim: normalized item is a substring of the normalized summary → score 1.00.
-2. Structural first: if the summary has a heading matching `constraint | rule | instruction |
-   feedback | standing`, score against that section's lines first, then the whole summary; keep
-   the overall best passage.
-3. Passage score = matched item tokens ÷ item tokens. Tokens `[a-z0-9_.\-()]+` of length ≥ 3,
-   stopwords removed. A token matches exactly, or by Levenshtein distance ≤ 2 for non-entity
-   tokens of length ≥ 6 (`refernce` matches `reference`). Entity tokens match exactly only.
+1. Verbatim: normalized item is a substring of the normalized summary → score 1.00, `matches`
+   = one entry covering the whole item, `fuzzy` false. If the match spans consecutive lines,
+   the passage is those lines joined with a space and `lineIndex` is the first.
+2. Structural first: a heading is a line matching `PATTERNS.heading` (`#` or `N.` at line
+   start) whose text contains a word from `constraint | rule | instruction | feedback |
+   standing`; its section runs to the next heading. Score that section's lines first, then the
+   whole summary; keep the overall best passage; record `structuralSection` (the heading text)
+   whenever the best passage lies in such a section, verbatim or not.
+3. Passage score = matched item tokens ÷ item tokens. Tokens `PATTERNS.token`
+   (`[a-z0-9_.-]+` plus an optional trailing `()`), length ≥ 3, stopwords removed; leading or
+   trailing punctuation is never part of a token. A token matches exactly, or by Levenshtein
+   distance ≤ 2 for non-entity tokens of length ≥ 6 (`refernce` matches `reference`). Entity
+   tokens match exactly only.
 
 Classes:
 - PRESERVED: score ≥ 0.75 and every entity present in the best passage
@@ -53,16 +63,17 @@ Paraphrase beyond token overlap lands in DEGRADED and the report says the score 
 ## Stage 3 — Evidence kept per call
 
 Item text, message uuid, timestamp, JSONL line. Boundary uuid, `preTokens`, `postTokens`.
-Matched span: the smallest contiguous span of the best passage covering all matched tokens, with
-matched phrases marked `«…»` and fuzzy matches `«~…»`. Summary line index. Matched tokens with
-fuzzy flag and distance. Entities found in the best passage and anywhere in the summary. The
-thresholds used. Everything is greppable in the transcript.
+`passage.text` raw, `matches` as character offsets into it with the raw token, fuzzy flag and
+distance (the source of truth). Matched span, derived: the smallest contiguous span of the best
+passage covering all matches, `«…»` exact, `«~…»` fuzzy. Summary line index. Entities found in
+the best passage and anywhere in the summary, as written in the item. The thresholds used.
+Everything is greppable in the transcript.
 
-## Stage 4 — First observed downstream action inconsistent with a lost item
+## Stage 4 — First observed downstream action inconsistent with an item
 
-Never the word "caused": the label is "first observed downstream action inconsistent with this
-item", and the report closes with: we show the loss and the action; we do not claim one caused
-the other. Every step below is deterministic; the word lists are closed.
+Status-neutral. Never the word "caused": the label is `INCONSISTENT_LABEL` and every result is
+printed with `CLOSING_LINE`, both defined only in the contract. Every step below is
+deterministic; the word lists are closed.
 
 **Anchor extraction** (what a matcher looks for)
 
@@ -87,7 +98,8 @@ including MCP; the first hit wins)
 6. Scope of the forbidden-token matcher is decided by the scope nouns in the sentence, through
    this closed map. A rule's scope is the union of what its nouns map to. A sentence with no
    scope noun gets the full allowlist, every kind below. Nothing outside the map is ever in
-   scope; there is no denylist.
+   scope; there is no denylist. "Every kind" means `WORDS.tokenScopeKinds`, the six kinds in
+   this table, never `file_edit` or `bash_write`. Nouns match as whole words, singular or plural.
 
    | Scope noun in the sentence | Artifact kind inspected |
    |---|---|
@@ -97,28 +109,37 @@ including MCP; the first hit wins)
    | `PR description(s)`, `pull request description(s)` | the text after `gh pr create` or `gh pr edit` in a Bash command |
    | `ticket(s)`, `issue(s)` | MCP calls whose name contains `issue` or `ticket`, whole JSON input |
 
-   MCP calls whose name contains a read verb from `get` `list` `search` `read` `fetch` `find`
-   `view` `query` are never in scope. Code-file types and comment markers, closed:
+   MCP calls are out of scope when any part of the name (split on `__`, `_`, `-`) equals a
+   read verb from `get` `list` `search` `read` `fetch` `find` `view` `query`;
+   `add_comment_to_thread` is in scope, `get_issue` is not. Every file-edit check inspects
+   `addedText` only (a Write's content; an Edit's new lines not in its old string); an unchanged
+   line never matches. Code-file types and comment markers, closed:
    `.py` `.sh` → `#`; `.ts` `.tsx` `.js` → `//` `/*` `*`; `.html` `.htm` → `<!--`. Added lines
    are the whole content of a Write, or the lines of an Edit's `new_string` not present in its
    `old_string`. Markdown, YAML, and memory files are not code files, so a memory-file write is
    never a match. A ticket id in a non-comment code line is not a match.
-7. forbidden-path (concrete path anchor): a file tool whose `file_path` ends with the anchor,
-   or a Bash command containing the anchor as a standalone token together with a write
-   pattern from `>` `sed -i` `tee` `cp` `mv` `rm` `git rm` `git mv` `touch` `chmod`, after
-   heredoc bodies and quoted strings are stripped. A `git add` of a different file is not a match.
+7. forbidden-path (concrete path anchor): a file tool (`WORDS.fileTools`: Write, Edit,
+   MultiEdit, NotebookEdit) whose `filePath` equals the anchor or ends with `/` + anchor, never
+   a longer suffix; or a Bash command, heredoc bodies and quoted strings stripped, where a write
+   pattern from `>` `sed -i` `tee` `cp` `mv` `rm` `git rm` `git mv` `touch` `chmod` applies to
+   the anchor as a standalone token (`> path`, `sed -i … path`, `rm path`). `cat path
+   2>/dev/null`, running the script, or a `git add` of a different file is not a match.
 8. forbidden-token (concrete ticket, host, or non-call ident anchor, or any class anchor):
    in-scope text from step 6 contains the anchor value, or, for a class anchor, matches the
    class regex.
-9. style-token (ident anchor ending in `()`, such as `print()`): Write, Edit, or MultiEdit to a
-   file whose extension is in `.py` `.ts` `.tsx` `.js` `.sh`, whose written content contains
-   the call name followed by `(`.
+9. style-token (ident anchor ending in `()`, such as `print()`): a file tool on a file whose
+   extension is in `.py` `.ts` `.tsx` `.js` `.sh`, whose `addedText` contains the call name at a
+   word boundary followed by `(` (`blueprint(` is not `print(`).
 
 **Output**
 
-10. The first match's tool_use id, timestamp, tool name, matcher name, and a 120-character
-    excerpt. Two distinct empties: `none matchable` (steps 1 or 5) and `none found` (a matcher
-    ran and hit nothing).
+10. The first match's tool_use id, timestamp, tool name, matcher name, artifact kind (the
+    first in `WORDS.artifactPrecedence` under which the call was in scope), and an excerpt of
+    at most `LIMITS.hitExcerpt` (120) characters. `scope` records the kinds inspected:
+    forbidden-token kinds, `file_edit` + `bash_write` for a path anchor, `file_edit` for a style
+    anchor, `[]` when not matchable. Two distinct empties: `none_matchable` ("not checkable" in
+    the UI; steps 1 or 5) and `none_found` (a matcher ran over the in-scope calls, possibly
+    zero, and hit nothing).
 
 **Listed cases this must satisfy** (also unit-checked against `scripts/autopsy-check.py`)
 
@@ -138,12 +159,13 @@ including MCP; the first hit wins)
 
 ## Stage 5 — Restatement
 
-After the boundary, a human sentence with stage-2 score ≥ 0.6 against the item, or containing
-all its entities plus a negation word, is a restatement, recorded with uuid and timestamp.
+After the boundary, a sentence of a human message's full `text` with stage-2 score ≥ 0.6
+against the item (`by: score`), or containing all its entities plus a negation word
+(`by: entities`), is a restatement, recorded with uuid, timestamp, score, and `by`.
 
-What it proves: the rule was back in context from that point, so later actions cannot be
-attributed to the compaction. What it does not prove: that the summary lacked the rule, or that
-the loss prompted the retyping.
+What it proves: the rule was back in context from that point. What it does not prove: that the
+summary lacked the rule, or that the loss prompted the retyping. The tool draws no conclusion
+about attribution in either direction.
 
 ## Validation on 2026-09-16, Claude Code 2.1.273
 

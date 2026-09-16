@@ -33,6 +33,7 @@ export function redactSession(session: Session, opts: RedactOptions): Session {
     messages: session.messages.map((m) => ({
       ...m,
       excerpt: r(m.excerpt),
+      ...(m.text !== undefined ? { text: r(m.text) } : {}),
       ...(m.action
         ? {
             action: {

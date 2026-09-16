@@ -3,7 +3,7 @@
  * Values come from the reference implementation's table (docs/specs/algorithm-v1.md).
  */
 import { describe, expect, it } from 'vitest'
-import type { AnalyzedSession, Session } from '../contract'
+import { CLOSING_LINE, type AnalyzedSession, type Session } from '../contract'
 import { fixtures } from '../../fixtures/index.ts'
 
 type Analyze = (s: Session) => AnalyzedSession
@@ -39,7 +39,7 @@ describe('healthy-run2, expected report', () => {
     expect(byId['0:127:2'].downstream).toMatchObject({ result: 'none_found' })
     expect(byId['0:157:3'].downstream).toMatchObject({ result: 'none_matchable', scope: [] })
     for (const r of reports[0].items) expect(r.downstream.hit).toBeUndefined()
-    expect(reports[0].closing).toBe('We show the loss and the action. We do not claim one caused the other.')
+    expect(reports[0].closing).toBe(CLOSING_LINE)
   })
 
   it('anchors as pre-labeled: path, ticket class, print(), none', async () => {

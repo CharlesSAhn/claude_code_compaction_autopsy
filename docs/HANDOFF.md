@@ -1,38 +1,101 @@
-# HANDOFF — 2026-09-16, end of P2
+# HANDOFF — 2026-09-16, end of story3 (P3a + T1 + contract review)
 
 The next session starts from this file and nothing else. Repo rules are in `CLAUDE.md`
 (auto-loaded). Time log is `STATUS.md`. Skills in `.claude/skills/` load at session start:
 `/task-close`, `/independent-review`, `/session-handoff`, `/freeze-contract` (human-run).
-Next step is P3a: propose the data model. Do not propose it from memory; read section
-"Decisions" below, which is the approved plan verbatim.
 
-## Done
+**The contract is reviewed and unfrozen.** `docs/contracts/contract.md` and
+`src/domain/contract.ts` went through an independent review (`docs/reviews/2026-09-16-contract-review.md`,
+30 correctness findings fixed or logged). No `docs/contracts/FROZEN` exists. The fixture step is
+the first real consumer and may still change the contract; two rulings are open (below).
+
+## Done this session
 
 | Commit | What |
 |--------|------|
-| 9d99739 scaffold | Vite + React + TS + Vitest, oxlint, scripts, `src/{domain,adapters,fixtures,ui,specs,tasks}`, architecture tests R1–R4, pre-commit hook |
-| 22199d4 guards | egress deny rules + hooks, contract freeze switch `docs/contracts/FROZEN`, CLAUDE.md, STATUS.md, `scripts/usage-time.mjs` |
-| 8899ae4 skills | the four skills |
-| 8bf8cbe allow push | `git push` allowed only on the human's "push", only `origin main` |
-| 7e4c144 handoff | first handoff |
-| 4861899 experiment runbook | `docs/experiments/run1.md`, `gen_argon.py` |
-| 510ddbe findings | three scratch runs, nothing lost; `docs/experiments/findings.md` |
-| 6e2c5d8 algorithm v1 | `docs/specs/algorithm-v1.md`, `scripts/autopsy-check.py` |
-| 9ecb6bd, 86006b9, f995eeb | stage-4 anchor rules with closed word lists, scope-noun map; script matches the spec; listed cases unit-checked; run tables zero false positives |
-| 840499b, 38802bd | plan amendments applied to docs; loss case is constructed from the generated data |
+| bbbc07a, 6d32a89 | contract v1 types and semantics; product, domain-model, session-files, algorithm-v1 specs; `src/adapters/session-source.ts`; CLAUDE.md three claims |
+| f533e10 | T1: JSONL adapter (parse, to-session, redact, validate), `scripts/build-fixtures.mjs`, `healthy-run2.json`, `--items-json` in the reference script, `npm run test:pending` |
+| e3b4764 | T1: `Message.action`, `scripts/construct-fixtures.mjs`, `constructed-ticket.json`, `constructed-file-edit.json`, `src/fixtures/index.ts`, `src/specs/fixtures.test.ts`, three pending expected tests |
+| f3cfbb7 | contract review: correctness fixes in docs and types (`Message.text`, `Restatement.by`, `LIMITS`, `PATTERNS`, scope kinds, precedence), fixtures rebuilt, review log |
 
-Pushed through 8bf8cbe. Nine commits ahead of origin, unpushed, waiting on the human's "push".
-No product code for the idea exists yet: no `src/domain/contract.ts`, no `docs/contracts/`,
-no `docs/tasks/`, no fixtures, no UI beyond the scaffold placeholder.
+Fifteen commits ahead of origin, unpushed, waiting on the human's "push". `npm run check`
+green (2 files, 16 tests). `npm run test:pending` red only because `analyze` does not exist
+(3 files, 8 tests).
 
 ## Next
 
-P3a: propose the data model (Session, Compaction, Item, Evidence, Action, Report) in the five
-shapes decided below, as `src/domain/contract.ts` plus `docs/contracts/*.md`. Propose first, wait
-for OK. The contract is frozen only after the fixtures have pushed back on the types. The task
-list is settled in its own step later; the list in the plan is provisional.
+1. Rulings (below), then re-derive the pending expected values once the reference script
+   matches the reviewed contract (review follow-ups).
+2. `/task-close T1` when the human says so; T1's acceptance criteria are in `docs/tasks/T1.md`.
+3. Then the analyzer task: stages 1–5 in `src/domain`, turns the pending tests green, moves
+   them out of `pending/`. Then `/freeze-contract`. Task list is still provisional.
 
-## Decisions — the approved plan, verbatim copy of ~/.claude/plans/nifty-chasing-nautilus.md
+## Open rulings
+
+- **Type feedback 2 (T1.md).** LOST versus non-anchor entities: the don't-modify item stays
+  DEGRADED at reference score 0.20 because `rotate_keys.py` survives in the summary; the
+  storyboard says LOST. Options: keep the clause and storyboard DEGRADED, or status rules use
+  anchor entities when the item has anchors. One constant in
+  `src/domain/pending/constructed-file-edit.expected.test.ts` follows the ruling.
+- **Review finding 22.** `stop` as a negation trigger turns ordinary sentences into rules.
+- Which of the reference-script follow-ups to apply before re-deriving expected values
+  (listed at the end of the review log).
+
+## Decisions this session, verbatim
+
+P3a proposal, the human's brief: "Propose the model on one screen. Use my interview answers as
+given; don't repoen them, wait for my ok: the types; statuses: PRESERVED, DEGRADED, LOST. Partial
+loss was the common case in my data. a provenance field on every session: observed-sanitized
+(from a real session file), experiment-derived (from a scratch run), or constructed. constructed
+session can carry a one-line note, for ex, "based on a real eent I can't show" The UI shows it.
+The default demo is chosen by it. evidence types, including the user re-typing a lost rule; how
+you judge "survived" when the summary paraphrases; what counts as a downstream action: any tool
+call, not just file edits; the three claims with fixed wording: lost, inconsistent, caused. The
+inconsistency label is status-neutral, it applies to DEGRADED too: "first observed downstream
+action inconsistent with this item". Quoted only in the contract; everything else refers to it.
+CAUSED: the tool never asserts it. Not a switch. the analysis result shape, mirroring the table
+from the real-data check you ran: only fields that were reliably populated are required, the
+rest optional" → "go".
+
+Definition docs brief: "Write the definition docs and the two code files. Short, useful for
+implementation, not paperwork. … Two paths are fixed because the hook and the freeze skill
+protect them: the contract `.md` under `docs/contracts/`, the types in `src/domain/contract.ts`.
+… Add the three claims to CLAUDE.md now that the contract names them: LOST, INCONSISTENT,
+CAUSED; CAUSED never asserted; the label is the contract's fixed phrase."
+
+Fixtures versus analysis: "Second point is right. First one, no. Extraction is the only stage the
+fixtures skip, by carrying pre-labeled items. Survival scoring, evidence, downstream matching,
+and restatement run in the browser on load; that's what the demo demonstrates. Fixtures are
+Sessions, not analyzed sessions. The source returns a Session, the UI calls analyze on it, and
+the expected results live in test files where the analyzer can't see them. AnalyzedSession is
+fine as the return type of analyze, not as fixture content."
+
+Sanitization rule: "Sanitize everything you touched. Some of what you read may be real work
+content, and this repo is public. Replace every ticket id, file path outside this repo,
+hostname, URL, repo name, project name, and person's name with an obviously fake placeholder.
+Paraphrase any quoted sentence about what the work was. Keep record structure, field names,
+scores, statuses, and overlap numbers exact." Remaining hit shown and left: PROJ-321 in the
+human's own quoted example in the first handoff.
+
+Three fixtures: "Mechanics OK: the adapter through the one door, the manual build-fixtures
+script, items from the reference implementation, home paths redacted, expected values in
+pending tests the analyzer can't see. Three fixtures, not two. Split the constructed one. Ticket
+case: the summary keeps the ticket as a work item and drops the rule, a comment call after names
+the ticket, note says it's based on a real event I can't show. File-edit case: the don't-modify
+rule is gone entirely, an Edit hits the file after, I re-type a rule later. Healthy stays run 2.
+Each demo tells one story; the picker shows three." → "go".
+
+Review and handoff brief: "Run `/independent-review contract` on the spec and contract docs,
+10-minute cap. … Show me the findings verbatim, then fix the correctness ones in the docs and
+log the rest. Don't freeze anything. The freeze comes after the fixtures are written against
+these types, so the first real consumer gets to push back first. Say in the handoff that the
+contract is reviewed and unfrozen, and the fixture step may still change it."
+
+Scope-noun map (earlier, story2, applied to the spec): "Both. The scope nouns in the sentence
+decide which artifact kinds are in scope. … A rule's scope is the union of what its nouns map
+to. No scope noun in the sentence: full allowlist."
+
+## Approved plan, verbatim copy of ~/.claude/plans/nifty-chasing-nautilus.md (interview answers, amendments, scope)
 
 ## Compaction Autopsy — plan (end of P2, 2026-09-16)
 
@@ -271,17 +334,10 @@ its "constructed" label, and the closing line; STATUS.md within the 4–5 hour b
 > - Keep replies short.
 
 Environment facts: auto mode ignores `ask` from rules and hooks, so egress is a hard deny except
-`git push`. Pushing needs the human's Terminal SSH agent socket in `SSH_AUTH_SOCK`; ask for
-`echo $SSH_AUTH_SOCK` if auth fails. Raw experiment transcripts live outside the repo in
-`~/scratch/autopsy-runs/run{1,2,3}.jsonl`; only committed fixtures may be read by tests or builds.
-
-## Open questions
-
-- Which of run 1 or run 2 becomes the healthy fixture (both have tracked items).
-- Exact construction of the loss fixture from the argon data, and how "constructed" is labeled in data and UI.
-- The three layout options for the center view and the animated story view.
-- The task list (settled in its own step).
-- Multiple compactions per session in the UI (model supports a list from day one).
+`git push`, which runs only on the human's "push" with the Terminal SSH agent socket in
+`SSH_AUTH_SOCK`. Raw experiment transcripts live outside the repo in `~/scratch/autopsy-runs/`;
+only committed fixtures may be read by tests or builds. Node 24 runs `.ts` imports unbuilt, so
+`scripts/*.mjs` share the adapter code.
 
 ## Uncommitted
 
@@ -289,6 +345,5 @@ clean (before this handoff commit)
 
 ## Time
 
-1h 24m of 4–5h target across all sessions (`node scripts/usage-time.mjs`, 97 turns).
-Closed rows in STATUS.md: scaffold 4 min, guards 13 min. Skills, allow-push, the experiments,
-algorithm v1, and the plan are not closed as tasks; they account for the remaining 1h 07m.
+Total: turns: 109  usage: 1h 51m 17s
+Closed rows in STATUS.md: scaffold 4 min, guards 13 min. Everything since (skills, experiments, algorithm, plan, contract, T1, review) is not closed as a task.

@@ -52,6 +52,23 @@ survival was through the summary alone.
 
 Cost scales with requests × context size, since every tool call re-sends the whole context.
 
+## Version dependence (user's finding, 2026-09-16)
+
+Run 1 compacted at about 1.06M tokens and kept every rule verbatim, so this version of Claude
+Code (2.1.273, the version in these transcripts) quotes constraints into the summary. The user's
+real losses came from a different week, possibly a different version. Compaction behavior
+changes across releases; that is part of why the tool exists. The real compacted sessions live
+on another machine; only a sanitized result table from `scripts/autopsy-check.py --redact`
+comes back from there.
+
+## Algorithm v1 check on this data
+
+`scripts/autopsy-check.py` (algorithm in `docs/specs/algorithm-v1.md`) run over the three runs
+and the probe: 9 items, all PRESERVED at score 1.00, provenance and matched span populated on
+every row. First inconsistent action was `none found` or `none matchable` on every row,
+restatement was `no` on every row, and DEGRADED never occurred. Those three are optional fields
+in the contract, populated by fixtures from the user's real-session table.
+
 ## Consequences for the product
 
 - On this evidence, the current summarizer preserves explicit constraints verbatim whether they

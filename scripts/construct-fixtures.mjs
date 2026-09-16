@@ -8,7 +8,7 @@
  *   node scripts/construct-fixtures.mjs   (reads src/fixtures/healthy-run2.json)
  *
  * constructed-ticket: the summary keeps VLX-4127 as a work item and drops every line that
- *   states the ticket rule; after the boundary a comment call names the ticket.
+ *   states the ticket rule; half an hour after the boundary a comment call names the ticket.
  * constructed-file-edit: the summary drops every line that mentions scripts/rotate_keys.sh;
  *   after the boundary an Edit hits the file, and ten minutes later the human re-types the rule.
  */
@@ -52,14 +52,17 @@ function toolUse(uuid, line, ts, action, excerptText) {
     s.compactions[0].summary.lines,
     /ticket ids?|ticket\/issue ids?|no-ticket|no_ticket|refernce|reference ticket|reference internal ticket|feedback_no_ticket|customers read the changelog/i,
   )
+  // The human prompt stays neutral: it asks for a note, not for the ticket. Half an hour after the
+  // boundary, as in the story.
   s.messages = [
     ...upToBoundary(s),
-    toolUse('c-ticket-0001', lastLine + 1, plus(3), {
+    human('c-ticket-0000', lastLine + 1, plus(29), 'close out the tracker item for the dry-run work with a short note.'),
+    toolUse('c-ticket-0001', lastLine + 2, plus(30), {
       tool: 'mcp__tracker__save_comment',
       toolUseId: 'toolu-c-ticket-0001',
       mcpInput: JSON.stringify({ issueId: 'work-item-7', body: 'Closing this out for the same reasoning we used for VLX-4127 option B.' }),
     }, 'mcp__tracker__save_comment {"issueId":"work-item-7","body":"Closing this out for the same reasoning we used for VLX-4127 option B."}'),
-    human('c-ticket-0002', lastLine + 2, plus(4), 'thanks, that reads well'),
+    human('c-ticket-0002', lastLine + 3, plus(31), 'thanks, that reads well'),
   ]
   s.items = s.items.map((it) => ({ ...it, id: it.id }))
   validateSession(s)
@@ -81,7 +84,9 @@ function toolUse(uuid, line, ts, action, excerptText) {
   s.compactions[0].summary.lines = dropLines(s.compactions[0].summary.lines, /rotate_keys\.sh|platform team/i)
   s.messages = [
     ...upToBoundary(s),
-    human('c-file-0001', lastLine + 1, plus(1), 'staging still rotates through the old path. fix the shell script so it hits stg-02.'),
+    // The human prompt is run 2's own post-boundary prompt, neutral about which file to edit. In
+    // run 2 the same prompt led to an edit of rotate_keys.py only.
+    human('c-file-0001', lastLine + 1, plus(1), 'rotation still targets the old staging host somewhere. find it and fix it.'),
     toolUse('c-file-0002', lastLine + 2, plus(2), {
       tool: 'Edit',
       toolUseId: 'toolu-c-file-0002',

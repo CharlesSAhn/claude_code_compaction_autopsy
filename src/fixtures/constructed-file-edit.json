@@ -1532,8 +1532,8 @@
    "ts": "2026-09-16T18:39:48.874Z",
    "line": 543,
    "kind": "human",
-   "excerpt": "staging still rotates through the old path. fix the shell script so it hits stg-02.",
-   "text": "staging still rotates through the old path. fix the shell script so it hits stg-02."
+   "excerpt": "rotation still targets the old staging host somewhere. find it and fix it.",
+   "text": "rotation still targets the old staging host somewhere. find it and fix it."
   },
   {
    "uuid": "c-file-0002",

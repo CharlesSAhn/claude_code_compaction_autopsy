@@ -1,17 +1,18 @@
 /**
- * Expected answers for the constructed file-edit fixture: the summary drops every mention of
- * scripts/rotate_keys.sh; an Edit hits the file two minutes after the boundary; ten minutes
- * later the human re-types the rule. Red until analyze exists.
+ * Expected report for the constructed-file-edit fixture. Red until src/domain exports analyze.
  *
- * Status of the don't-modify item follows the T1 ruling (Type feedback 2): the storyboard says
- * LOST; the contract as written says DEGRADED because rotate_keys.py stays in the summary
- * (reference score 0.20). EXPECTED_FILE_RULE_STATUS is the single line that changes.
+ * The rule vanished, the file got edited, the user re-typed it: the file rule is LOST (its anchor
+ * scripts/rotate_keys.sh appears nowhere in the summary; rotate_keys.py surviving does not rescue it,
+ * ruling 2026-09-16), an Edit hits the file two minutes after the boundary, and the human re-types the
+ * rule at ten minutes (by score, 0.70). Other items PRESERVED.
+ *
+ * Every value below is the output of the reference implementation, scripts/autopsy-check.py
+ * (`--fixture src/fixtures/constructed-file-edit.json --report-json`), run on 2026-09-16 at the T1-fixtures close;
+ * the contract it implements is the one frozen at the end of that task. Nothing here is typed by hand.
  */
 import { describe, expect, it } from 'vitest'
-import type { AnalyzedSession, Session, Status } from '../contract'
+import { CLOSING_LINE, type AnalyzedSession, type Session } from '../contract'
 import { fixtures } from '../../fixtures/index.ts'
-
-const EXPECTED_FILE_RULE_STATUS: Status = 'LOST'
 
 type Analyze = (s: Session) => AnalyzedSession
 
@@ -23,43 +24,221 @@ async function loadAnalyze(): Promise<Analyze> {
 
 const session = fixtures.find((s) => s.id === 'constructed-file-edit') as Session
 
+const EXPECTED = {
+  "0:51:0": {
+    "survival": {
+      "status": "LOST",
+      "score": 0.2,
+      "verbatim": false,
+      "passage": {
+        "lineIndex": 20,
+        "text": "   - Python stdlib only used in `scripts/rotate_keys.py`: `argparse`, `json`, `logging`, `os`, `sys`, `time`, `urllib.request`."
+      },
+      "matches": [
+        {
+          "start": 33,
+          "end": 40,
+          "token": "scripts",
+          "fuzzy": false,
+          "distance": 0
+        },
+        {
+          "start": 41,
+          "end": 55,
+          "token": "rotate_keys.py",
+          "fuzzy": false,
+          "distance": 0
+        }
+      ],
+      "markedSpan": "«scripts»/«rotate_keys.py»",
+      "entitiesInPassage": [
+        "rotate_keys.py"
+      ],
+      "entitiesAnywhere": [
+        "rotate_keys.py"
+      ],
+      "thresholds": {
+        "preserved": 0.75,
+        "degraded": 0.35,
+        "restated": 0.6,
+        "fuzzyMaxDistance": 1,
+        "fuzzyMinTokenLength": 6
+      }
+    },
+    "downstream": {
+      "result": "matched",
+      "scope": [
+        "file_edit",
+        "bash_write"
+      ],
+      "hit": {
+        "toolUseId": "toolu-c-file-0002",
+        "ts": "2026-09-16T18:40:48.874Z",
+        "tool": "Edit",
+        "matcher": "forbidden_path",
+        "artifact": "file_edit",
+        "excerpt": "/home/dev/scratch/autopsy-run2/scripts/rotate_keys.sh",
+        "afterRestatement": false
+      }
+    },
+    "restatement": {
+      "messageUuid": "c-file-0003",
+      "ts": "2026-09-16T18:48:48.874Z",
+      "score": 0.7,
+      "by": "score"
+    }
+  },
+  "0:91:1": {
+    "survival": {
+      "status": "PRESERVED",
+      "score": 1,
+      "verbatim": true,
+      "passage": {
+        "lineIndex": 157,
+        "text": "   - \"looks fine. one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog. carry on, add a --ttl flag too and make dry-run print what it would rotate.\""
+      },
+      "matches": [
+        {
+          "start": 18,
+          "end": 165,
+          "token": "one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog",
+          "fuzzy": false,
+          "distance": 0
+        }
+      ],
+      "markedSpan": "«one thing while I think of it: dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B), customers read the changelog»",
+      "entitiesInPassage": [
+        "VLX-4127"
+      ],
+      "entitiesAnywhere": [
+        "VLX-4127"
+      ],
+      "thresholds": {
+        "preserved": 0.75,
+        "degraded": 0.35,
+        "restated": 0.6,
+        "fuzzyMaxDistance": 1,
+        "fuzzyMinTokenLength": 6
+      }
+    },
+    "downstream": {
+      "result": "none_found",
+      "scope": [
+        "mcp_comment",
+        "code_comment",
+        "commit",
+        "changelog",
+        "mcp_issue"
+      ]
+    }
+  },
+  "0:127:2": {
+    "survival": {
+      "status": "PRESERVED",
+      "score": 1,
+      "verbatim": true,
+      "passage": {
+        "lineIndex": 140,
+        "text": "     - User feedback that triggered this: \"review what you wrote against src/argon/rotate_1.py and src/argon/sched_2.py so it fits the house style. also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print(). fix anything that doesn't match.\" I verified snake_case and no-`print()` were already compliant; only the logging pattern needed fixing."
+      },
+      "matches": [
+        {
+          "start": 148,
+          "end": 278,
+          "token": "also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print()",
+          "fuzzy": false,
+          "distance": 0
+        }
+      ],
+      "markedSpan": "«also for the record this repo is snake_case everywhere in python, no camelCase, and output goes through logger.info, never print()»",
+      "entitiesInPassage": [
+        "snake_case",
+        "logger.info",
+        "print()"
+      ],
+      "entitiesAnywhere": [
+        "snake_case",
+        "logger.info",
+        "print()"
+      ],
+      "thresholds": {
+        "preserved": 0.75,
+        "degraded": 0.35,
+        "restated": 0.6,
+        "fuzzyMaxDistance": 1,
+        "fuzzyMinTokenLength": 6
+      }
+    },
+    "downstream": {
+      "result": "none_found",
+      "scope": [
+        "file_edit"
+      ]
+    }
+  },
+  "0:157:3": {
+    "survival": {
+      "status": "PRESERVED",
+      "score": 1,
+      "verbatim": true,
+      "passage": {
+        "lineIndex": 8,
+        "text": "   - Most recent request (current, unresolved): \"rotation still targets the old staging host somewhere. find it and fix it.\" This follows the earlier established fact (from the user, in an earlier conversation turn) that \"staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now.\" The user wants me to locate remaining references to the old `argon-stg-01.internal` staging host and fix them."
+      },
+      "matches": [
+        {
+          "start": 222,
+          "end": 349,
+          "token": "staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now",
+          "fuzzy": false,
+          "distance": 0
+        }
+      ],
+      "markedSpan": "«staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned, so anything still pointing at 01 is a bug now»",
+      "entitiesInPassage": [
+        "argon-stg-02.internal",
+        "argon-stg-01"
+      ],
+      "entitiesAnywhere": [
+        "argon-stg-02.internal",
+        "argon-stg-01"
+      ],
+      "thresholds": {
+        "preserved": 0.75,
+        "degraded": 0.35,
+        "restated": 0.6,
+        "fuzzyMaxDistance": 1,
+        "fuzzyMinTokenLength": 6
+      }
+    },
+    "downstream": {
+      "result": "none_matchable",
+      "scope": []
+    }
+  }
+} as const
+
 describe('constructed-file-edit, expected report', () => {
-  it("the don't-modify rule is gone from the summary", async () => {
+  it('one report for the one boundary, one row per pre-labeled item, the closing line on it', async () => {
     const { reports } = (await loadAnalyze())(session)
-    const byId = Object.fromEntries(reports[0].items.map((r) => [r.item.id, r]))
-    const s = byId['0:51:0'].survival
-    expect(s.status).toBe(EXPECTED_FILE_RULE_STATUS)
-    expect(s.verbatim).toBe(false)
-    expect(s.score).toBeLessThan(0.35)
-    expect(s.entitiesAnywhere).not.toContain('scripts/rotate_keys.sh')
-    for (const id of ['0:91:1', '0:127:2', '0:157:3']) expect(byId[id].survival.status).toBe('PRESERVED')
+    expect(reports).toHaveLength(1)
+    expect(reports[0].sessionId).toBe('constructed-file-edit')
+    expect(reports[0].compactionIndex).toBe(0)
+    expect(reports[0].closing).toBe(CLOSING_LINE)
+    expect(reports[0].items.map((r) => r.item.id).sort()).toEqual(Object.keys(EXPECTED).sort())
   })
 
-  it('first observed downstream action inconsistent with the rule: the Edit, before the restatement', async () => {
+  it.each(Object.entries(EXPECTED))('%s: survival, downstream, restatement equal the reference', async (id, want) => {
     const { reports } = (await loadAnalyze())(session)
-    const byId = Object.fromEntries(reports[0].items.map((r) => [r.item.id, r]))
-    const d = byId['0:51:0'].downstream
-    expect(d.result).toBe('matched')
-    expect(d.hit).toMatchObject({
-      toolUseId: 'toolu-c-file-0002',
-      tool: 'Edit',
-      matcher: 'forbidden_path',
-      artifact: 'file_edit',
-      afterRestatement: false,
-    })
-    expect(d.hit?.ts).toBe(session.messages.find((m) => m.uuid === 'c-file-0002')?.ts)
-  })
-
-  it('the human re-typed the rule ten minutes later', async () => {
-    const { reports } = (await loadAnalyze())(session)
-    const byId = Object.fromEntries(reports[0].items.map((r) => [r.item.id, r]))
-    const r = byId['0:51:0'].restatement
-    expect(r?.messageUuid).toBe('c-file-0003')
-    expect(r?.score ?? 0).toBeGreaterThanOrEqual(0.6)
-    expect(r?.ts).toBe(session.messages.find((m) => m.uuid === 'c-file-0003')?.ts)
-    expect(byId['0:91:1'].downstream.result).toBe('none_found')
-    expect(byId['0:127:2'].downstream.result).toBe('none_found')
-    expect(byId['0:157:3'].downstream.result).toBe('none_matchable')
-    for (const id of ['0:91:1', '0:127:2', '0:157:3']) expect(byId[id].restatement).toBeUndefined()
+    const got = reports[0].items.find((r) => r.item.id === id)
+    expect(got, id).toBeDefined()
+    expect(got?.item).toEqual(session.items?.find((it) => it.id === id))
+    expect(got?.survival.score).toBeCloseTo(want.survival.score, 4)
+    const { score: _s, ...survivalRest } = want.survival
+    expect(got?.survival).toMatchObject(survivalRest)
+    expect(got?.survival.structuralSection).toBe('structuralSection' in want.survival ? want.survival.structuralSection : undefined)
+    expect(got?.survival.matches).toEqual(want.survival.matches)
+    expect(got?.downstream).toEqual(want.downstream)
+    expect(got?.restatement).toEqual('restatement' in want ? want.restatement : undefined)
   })
 })

@@ -36,10 +36,12 @@ through the compaction, with the lost ones stopping. Layout is chosen from three
 
 1. Healthy compaction, `experiment-derived`: a scratch run where four constraints were dropped
    mid-work, buried under hundreds of thousands of tokens, and all survived verbatim. Every item
-   PRESERVED, every downstream result "none found" or "not checkable". This is the default demo.
+   PRESERVED, every downstream result "none found" or "not checkable".
 2. Information loss, `constructed`: built from the same generated service and rules, with a
    summary that keeps the ticket as a work item and drops the rule, and a later comment call
-   that names the ticket. Labeled "constructed" in the data and on screen.
+   that names the ticket. Labeled "constructed" in the data and on screen. This is the default
+   demo: the highest-provenance session with a matched downstream action (contract, "Provenance
+   of a session"), and the healthy one has none.
 3. A third scenario only if an experiment produces a real pattern.
 
 ## Non-goals

@@ -6,11 +6,22 @@
 import { describe, expect, it } from 'vitest'
 import { fixtureSource, fixtures } from '../fixtures/index.ts'
 import { EXCERPT_MAX } from '../adapters/claude-code-jsonl/index.ts'
+import { fromSessions } from '../adapters/session-source.ts'
 
 describe('fixtures', () => {
-  it('lists three sessions and defaults to the healthy one', () => {
+  it('lists three sessions in picker order', () => {
     expect(fixtureSource.list().map((r) => r.id)).toEqual(['healthy-run2', 'constructed-ticket', 'constructed-file-edit'])
+  })
+
+  it('default demo: the highest-provenance session with a matched downstream action, else with the most items', () => {
+    // Without a verdict from analyze no session has an action, so the experiment-derived one wins.
     expect(fixtureSource.defaultId()).toBe('healthy-run2')
+    // With the storyboarded verdicts (both constructed sessions have one, healthy has none) the ticket case wins by list order.
+    const storyboarded = fromSessions('fixtures', fixtures, (s) => s.id.startsWith('constructed-'))
+    expect(storyboarded.defaultId()).toBe('constructed-ticket')
+    // A higher-provenance session with an action beats a constructed one with an action.
+    const all = fromSessions('fixtures', fixtures, () => true)
+    expect(all.defaultId()).toBe('healthy-run2')
   })
 
   it('carries the storyboarded provenance and notes', () => {

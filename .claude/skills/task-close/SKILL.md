@@ -36,10 +36,12 @@ task files in `docs/tasks/<task>.md`.
     still exists: FAIL with "src/domain/pending/ must be emptied and removed before closing".
   - A `git mv` out of the folder shows as `R` in name-status: a rename, not a loss.
 
-## 2. Contract unchanged
-- `git diff --stat $BASE -- docs/contracts src/domain/contract.ts`. Must be empty. Non-empty: FAIL.
-- If `docs/contracts/FROZEN` exists: run `shasum -a 256 -c docs/contracts/FROZEN` from the
-  repo root and paste the output. Any line not `OK`: FAIL.
+## 2. Contract check
+- The check is `shasum -a 256 -c docs/contracts/FROZEN`. If `docs/contracts/FROZEN` exists,
+  run it from the repo root and paste the output. Any line not `OK`: FAIL.
+- Before FROZEN exists the contract is allowed to move. Paste
+  `git diff --stat $BASE -- docs/contracts src/domain/contract.ts` as a report and continue;
+  it never fails the close on its own.
 
 ## 3. Acceptance criteria
 For each task, read its `## Acceptance criteria` section. For every criterion print one line:

@@ -36,11 +36,15 @@ Test files (`*.test.ts`, `*.test.tsx`) are exempt from R1 and R2, not from R3.
 - Never bypass a hook, by any means. That includes `--no-verify`, changing `core.hooksPath`,
   `-c` overrides, environment variables that skip hooks, editing or disabling hook scripts,
   or committing through any path that avoids them. If a hook blocks you, stop and report.
-- Nothing leaves the machine: `git push/fetch/pull/clone/remote/ls-remote`, `aws`, `curl`,
+- Nothing leaves the machine: `git fetch/pull/clone/remote/ls-remote`, `aws`, `curl`,
   `wget`, `ssh`, `scp`, `sftp`, `rsync`, `gh`, `npm publish` are `deny` rules in
   `.claude/settings.json`, backed by `.claude/hooks/guard-egress.sh`. Auto mode ignores
   `ask` from rules and hooks (verified 2026-09-16), so it is a hard deny. When a step needs
   egress, say so and let the human lift the rule for that step or run it in Terminal.
+- `git push` is the one exception, gated by this rule instead of a deny: push only when the
+  human says `push`, only `git push origin main`, never force, never a different remote or
+  branch. `git remote` stays denied so the target cannot be changed. The push needs the
+  human's Terminal SSH agent socket in `SSH_AUTH_SOCK`; ask for it if auth fails.
 - Contract freeze: while `docs/contracts/FROZEN` exists, no tool may write to
   `docs/contracts/` or `src/domain/contract.ts`. Reads are fine. The freeze skill creates
   FROZEN with the file hashes; until then the guard is best-effort (path matching only).

@@ -1,6 +1,6 @@
 ---
 name: task-close
-description: Close one or more tasks. Verifies check/build, test integrity, pending-folder ownership, contract freeze, acceptance criteria, and file ownership, then makes one commit per task and updates STATUS.md. Stops at a HUMAN-GATE; the human pushes from Terminal.
+description: Close one or more tasks. Verifies check/build, test integrity, pending-folder ownership, contract freeze, acceptance criteria, and file ownership, then makes one commit per task and updates STATUS.md. Stops at a HUMAN-GATE and pushes only on the human's "push".
 argument-hint: <task> [<task>...]
 ---
 
@@ -67,6 +67,6 @@ and write its row: task, status `closed`, SHA, started, finished (UTC), minutes,
 ## 7. Gate
 Print exactly:
 `[HUMAN-GATE] Review the diff. Reply "push" to push.`
-and stop. Egress is a hard deny in this repo, so Claude never pushes. On "push", print the
-command for the human to run in Terminal:
-`git push origin main`
+and stop. On "push", and only then, run `git push origin main` with the human's Terminal
+SSH agent socket in `SSH_AUTH_SOCK`. Never force, never another remote or branch. If auth
+fails, ask the human for the current socket path and retry once.

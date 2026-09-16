@@ -14,10 +14,12 @@ Stage 4, first inconsistent action (docs/specs/algorithm-v1.md steps 1-10): only
   anchors; trigger clause = trigger word to the first boundary (, ; and but so unless); concrete
   anchors = entities inside the clause, else a class anchor from the class-noun list (ticket/host/path);
   fact and positive items are never matched. Matchers: forbidden-path (file tool on the path, or Bash
-  write pattern naming it, literals stripped); forbidden-token on an allowlist only: MCP calls whose
-  name has a target noun (comment issue note reply ticket) and no read verb (get list search read
-  fetch find view query), git commit message text, CHANGELOG* edits; style-token on code files
-  (.py .ts .tsx .js .sh). No denylist.
+  write pattern naming it, literals stripped); forbidden-token whose scope is the union of what the
+  sentence's scope nouns map to (comment(s) -> MCP comment/issue/note calls + added comment lines in
+  code-file edits; commit message(s) -> git commit text; changelog -> CHANGELOG* edits; PR description(s)
+  -> gh pr create/edit body; ticket(s)/issue(s) -> MCP issue/ticket calls; no noun -> all of them), MCP
+  read verbs (get list search read fetch find view query) never in scope, code files .py .sh .ts .tsx
+  .js .html only; style-token on code files (.py .ts .tsx .js .sh). No denylist.
 Stage 5, restated: a post-boundary human sentence scoring >= 0.6 against the item, or containing all
   item entities plus a negation word.
 
@@ -53,9 +55,23 @@ RO_CMD = {"cat", "ls", "grep", "rg", "find", "head", "tail", "wc"}
 GIT_RO = {"status", "log", "diff", "show", "ls-files", "rev-parse", "branch"}
 WRITE_PAT = re.compile(r"(^|[^<])>|\bsed\b.*-i|\btee\b|\bcp\b|\bmv\b|\brm\b|\bgit (rm|mv)\b|\btouch\b|\bchmod\b")
 FILE_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
-MCP_TARGET = re.compile(r"comment|issue|note|reply|ticket", re.I)   # stage 4 step 6a
-MCP_READ = re.compile(r"get|list|search|read|fetch|find|view|query", re.I)  # stage 4 step 6a
-CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")                      # stage 4 step 6d
+MCP_READ = re.compile(r"get|list|search|read|fetch|find|view|query", re.I)  # stage 4 step 6
+MCP_COMMENT = re.compile(r"comment|issue|note", re.I)
+MCP_ISSUE = re.compile(r"issue|ticket", re.I)
+SCOPE_NOUNS = [  # stage 4 step 6: scope noun in the sentence -> artifact kinds
+    (re.compile(r"\bcomments?\b", re.I), {"mcp_comment", "code_comment"}),
+    (re.compile(r"\bcommit messages?\b", re.I), {"commit"}),
+    (re.compile(r"\bchangelogs?\b", re.I), {"changelog"}),
+    (re.compile(r"\bpr descriptions?\b|\bpull request descriptions?\b", re.I), {"pr_body"}),
+    (re.compile(r"\btickets?\b|\bissues?\b", re.I), {"mcp_issue"}),
+]
+ALL_SCOPES = {"mcp_comment", "code_comment", "commit", "changelog", "pr_body", "mcp_issue"}
+COMMENT_MARKERS = {  # stage 4 step 6: code-file types and their comment markers, for added lines
+    ".py": ("#",), ".sh": ("#",),
+    ".ts": ("//", "/*", "*"), ".tsx": ("//", "/*", "*"), ".js": ("//", "/*", "*"),
+    ".html": ("<!--",), ".htm": ("<!--",),
+}
+CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")                      # stage 4 step 9
 BOUNDARY = re.compile(r"[,;]|\band\b|\bbut\b|\bso\b|\bunless\b", re.I)  # stage 4 step 1
 CLASS_NOUNS = [  # stage 4 step 3: class nouns -> entity kind
     ("ticket", re.compile(r"\b(ticket|issue) (ids?|numbers?|keys?)\b", re.I)),
@@ -248,18 +264,65 @@ def written_text(name, inp):
     return ""
 
 
-def allowlist_text(name, inp):
-    """Text in scope for forbidden-token / environment-fact matchers, or None."""
-    if name.startswith("mcp__") and MCP_TARGET.search(name) and not MCP_READ.search(name):
-        return json.dumps(inp)
+def scope_of(sent):
+    """Stage 4 step 6: union of the artifact kinds named by scope nouns in the sentence; none -> all."""
+    out = set()
+    for r, kinds in SCOPE_NOUNS:
+        if r.search(sent):
+            out |= kinds
+    return out or set(ALL_SCOPES)
+
+
+def added_lines(name, inp):
+    if name == "Write":
+        return inp.get("content", "").split("\n")
+    if name == "Edit":
+        old = set(inp.get("old_string", "").split("\n"))
+        return [l for l in inp.get("new_string", "").split("\n") if l not in old]
+    if name == "MultiEdit":
+        out = []
+        for e in inp.get("edits", []) or []:
+            old = set(e.get("old_string", "").split("\n"))
+            out += [l for l in e.get("new_string", "").split("\n") if l not in old]
+        return out
+    return []
+
+
+def comment_lines(name, inp):
+    fp = inp.get("file_path", "")
+    markers = COMMENT_MARKERS.get(os.path.splitext(fp)[1].lower())
+    if not markers or name not in ("Write", "Edit", "MultiEdit"):
+        return ""
+    return "\n".join(l for l in added_lines(name, inp) if l.lstrip().startswith(markers))
+
+
+def pr_body_text(cmd):
+    m = re.search(r"\bgh pr (create|edit)\b(.*)$", cmd, re.S)
+    return m.group(2) if m else ""
+
+
+def allowlist_text(name, inp, scope):
+    """Text in scope for the forbidden-token matcher under the item's scope set, or None."""
+    parts = []
+    if name.startswith("mcp__") and not MCP_READ.search(name):
+        if "mcp_comment" in scope and MCP_COMMENT.search(name):
+            parts.append(json.dumps(inp))
+        elif "mcp_issue" in scope and MCP_ISSUE.search(name):
+            parts.append(json.dumps(inp))
     if name == "Bash":
-        t = commit_message_text(inp.get("command", ""))
-        return t if t.strip() else None
+        cmd = inp.get("command", "")
+        if "commit" in scope:
+            parts.append(commit_message_text(cmd))
+        if "pr_body" in scope:
+            parts.append(pr_body_text(cmd))
     if name in ("Write", "Edit", "MultiEdit"):
         fp = inp.get("file_path", "")
-        if os.path.basename(fp).startswith("CHANGELOG"):
-            return written_text(name, inp)
-    return None
+        if "changelog" in scope and os.path.basename(fp).startswith("CHANGELOG"):
+            parts.append(written_text(name, inp))
+        if "code_comment" in scope:
+            parts.append(comment_lines(name, inp))
+    t = "\n".join(x for x in parts if x and x.strip())
+    return t if t.strip() else None
 
 
 RETIRE = re.compile(r"decommissioned|gone|retired|deprecated", re.I)
@@ -292,6 +355,7 @@ def anchors_of(item):
 
 def first_inconsistent(item, post_tools):
     sent = item["text"]
+    scope = scope_of(sent)
     matchers = []
     for k, v in anchors_of(item):
         if k == "path" and v != "*":
@@ -320,7 +384,7 @@ def first_inconsistent(item, post_tools):
                 if name in ("Edit", "Write", "MultiEdit") and fp.endswith(CODE_EXT) and ent in wt:
                     hit = wt
             else:  # forbidden_token: allowlist scope only (stage 4 step 6a-c)
-                at = allowlist_text(name, inp)
+                at = allowlist_text(name, inp, scope)
                 if at is not None:
                     if ent.startswith("*"):
                         m = CLASS_RES[ent[1:]].search(at)

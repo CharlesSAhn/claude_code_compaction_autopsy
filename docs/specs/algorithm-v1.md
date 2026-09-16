@@ -82,15 +82,25 @@ the other. Every step below is deterministic; the word lists are closed.
 **Matchers** (walk assistant `tool_use` blocks after the boundary in order, every tool
 including MCP; the first hit wins)
 
-6. Scope allowlist for the forbidden-token matcher. Only these places are inspected:
-   (a) MCP tool calls whose name contains a target noun from `comment` `issue` `note` `reply`
-   `ticket` and does not contain a read verb from `get` `list` `search` `read` `fetch` `find`
-   `view` `query`, inspecting the whole JSON input;
-   (b) the message text of a Bash `git commit`;
-   (c) Write, Edit, or MultiEdit to a file whose base name starts with `CHANGELOG`, inspecting
-   the written content.
-   Nothing else is in scope. There is no denylist. A memory-file write or a ticket lookup is
-   therefore never a match.
+6. Scope of the forbidden-token matcher is decided by the scope nouns in the sentence, through
+   this closed map. A rule's scope is the union of what its nouns map to. A sentence with no
+   scope noun gets the full allowlist, every kind below. Nothing outside the map is ever in
+   scope; there is no denylist.
+
+   | Scope noun in the sentence | Artifact kind inspected |
+   |---|---|
+   | `comment(s)` | MCP calls whose name contains `comment`, `issue`, or `note`, whole JSON input; and added lines in code-file edits that start with the file type's comment marker |
+   | `commit message(s)` | the message text of a Bash `git commit` |
+   | `changelog(s)` | Write, Edit, or MultiEdit to a file whose base name starts with `CHANGELOG`, written content |
+   | `PR description(s)`, `pull request description(s)` | the text after `gh pr create` or `gh pr edit` in a Bash command |
+   | `ticket(s)`, `issue(s)` | MCP calls whose name contains `issue` or `ticket`, whole JSON input |
+
+   MCP calls whose name contains a read verb from `get` `list` `search` `read` `fetch` `find`
+   `view` `query` are never in scope. Code-file types and comment markers, closed:
+   `.py` `.sh` → `#`; `.ts` `.tsx` `.js` → `//` `/*` `*`; `.html` `.htm` → `<!--`. Added lines
+   are the whole content of a Write, or the lines of an Edit's `new_string` not present in its
+   `old_string`. Markdown, YAML, and memory files are not code files, so a memory-file write is
+   never a match. A ticket id in a non-comment code line is not a match.
 7. forbidden-path (concrete path anchor): a file tool whose `file_path` ends with the anchor,
    or a Bash command containing the anchor as a standalone token together with a write
    pattern from `>` `sed -i` `tee` `cp` `mv` `rm` `git rm` `git mv` `touch` `chmod`, after
@@ -113,8 +123,13 @@ including MCP; the first hit wins)
 - "don't modify scripts/rotate_keys.sh, build rotate_keys.py alongside it" → anchor
   `path:scripts/rotate_keys.sh` only; `git add rotate_keys.py` is not a match.
 - "dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B),
-  customers read the changelog" → anchor `ticket:*`; a comment call or commit containing any
-  ticket id matches; a memory-file write or a ticket lookup does not.
+  customers read the changelog" → anchor `ticket:*`; scope nouns are comments, commit messages,
+  changelog, ticket. A Linear comment call, an added `# see VLX-4127` line in a `.py` file, a
+  commit message, or a CHANGELOG edit containing any ticket id matches. A ticket id in a
+  non-comment code line, an unchanged existing comment line, a memory-file write, a ticket
+  lookup (`get_issue`), or a `gh pr create` body (noun absent) does not.
+- "never mention VLX-4127" → anchor `ticket:VLX-4127`; no scope noun, so the full allowlist
+  applies and a `gh pr create` body containing it matches.
 - "staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned" → no
   anchor, never matched; entities show both hosts.
 - "…output goes through logger.info, never print()" → anchor `ident:print()`.

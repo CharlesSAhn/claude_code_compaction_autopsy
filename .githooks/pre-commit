@@ -1,0 +1,9 @@
+#!/bin/sh
+# Runs lint and typecheck only. Tests run at task close, not here:
+# this hook fires on every commit, including subagents in worktrees,
+# and the full suite is too slow for that.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+echo "pre-commit: lint + typecheck"
+npm run --silent lint
+npm run --silent typecheck

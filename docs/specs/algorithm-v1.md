@@ -58,29 +58,66 @@ thresholds used. Everything is greppable in the transcript.
 
 ## Stage 4 — First observed downstream action inconsistent with a lost item
 
-Walk assistant `tool_use` blocks after the boundary in order, every tool including MCP. Never
-the word "caused": the label is "first observed downstream action inconsistent with this item",
-and the report closes with: we show the loss and the action; we do not claim one caused the other.
+Never the word "caused": the label is "first observed downstream action inconsistent with this
+item", and the report closes with: we show the loss and the action; we do not claim one caused
+the other. Every step below is deterministic; the word lists are closed.
 
-Matchers by item class and entity:
-- forbidden path (negation + path): a file tool whose `file_path` is that exact path, or a Bash
-  command naming the exact path as a standalone token together with a write pattern. Heredoc
-  bodies and quoted strings are stripped from Bash commands before matching.
-- forbidden token (negation + ticket or ident, sentence mentions comment, commit, message, or
-  changelog) and environment fact (fact + host, matching an added line that reintroduces the
-  retired host): **scope is an allowlist**. Only these three places are inspected:
-  (a) MCP tool calls whose name contains `comment`, `issue`, `note`, or `reply`;
-  (b) the message text of a Bash `git commit`;
-  (c) Write, Edit, or MultiEdit to a file whose name starts with `CHANGELOG`.
-  Nothing else is in scope. There is no denylist.
-- style token (negation + ident such as `print()`): Write/Edit content containing the token.
+**Anchor extraction** (what a matcher looks for)
 
-Matcher entities come only from the clause that starts at the trigger word, up to the next
-comma, "and", or "but", so a second path in the same sentence does not leak in.
+1. Only `negation` items get anchors. `fact` and `positive` items have none and always report
+   `none matchable`. Both hosts of a fact still appear in the entities column.
+2. Trigger clause = the text from the negation trigger word to the first boundary. Boundary
+   list: `,` `;` ` and ` ` but ` ` so ` ` unless `. Negation trigger list: `don't` `dont`
+   `do not` `never` `avoid` `stop` `no longer`.
+3. Concrete anchors = every entity (path, ticket, host, ident) whose text lies inside the
+   trigger clause. Entities outside the clause are examples or context: shown in the entities
+   column, never anchors.
+4. If the clause has no concrete anchor, class anchor = the first class noun in the clause:
+   `ticket id(s)` `ticket number(s)` `ticket key(s)` `issue id(s)` `issue number(s)`
+   `issue key(s)` → class ticket; `hostname(s)` `host name(s)` → class host; `file path(s)`
+   `file name(s)` `path(s)` → class path. A class anchor matches by that entity kind's regex,
+   any value.
+5. If neither exists, the item reports `none matchable`.
 
-Output: the first match's tool_use id, timestamp, tool name, matcher name, 120-char excerpt.
-Two distinct empties: `none matchable` when no matcher applies to the item's class or entity;
-`none found` when a matcher ran and hit nothing.
+**Matchers** (walk assistant `tool_use` blocks after the boundary in order, every tool
+including MCP; the first hit wins)
+
+6. Scope allowlist for the forbidden-token matcher. Only these places are inspected:
+   (a) MCP tool calls whose name contains a target noun from `comment` `issue` `note` `reply`
+   `ticket` and does not contain a read verb from `get` `list` `search` `read` `fetch` `find`
+   `view` `query`, inspecting the whole JSON input;
+   (b) the message text of a Bash `git commit`;
+   (c) Write, Edit, or MultiEdit to a file whose base name starts with `CHANGELOG`, inspecting
+   the written content.
+   Nothing else is in scope. There is no denylist. A memory-file write or a ticket lookup is
+   therefore never a match.
+7. forbidden-path (concrete path anchor): a file tool whose `file_path` ends with the anchor,
+   or a Bash command containing the anchor as a standalone token together with a write
+   pattern from `>` `sed -i` `tee` `cp` `mv` `rm` `git rm` `git mv` `touch` `chmod`, after
+   heredoc bodies and quoted strings are stripped. A `git add` of a different file is not a match.
+8. forbidden-token (concrete ticket, host, or non-call ident anchor, or any class anchor):
+   in-scope text from step 6 contains the anchor value, or, for a class anchor, matches the
+   class regex.
+9. style-token (ident anchor ending in `()`, such as `print()`): Write, Edit, or MultiEdit to a
+   file whose extension is in `.py` `.ts` `.tsx` `.js` `.sh`, whose written content contains
+   the call name followed by `(`.
+
+**Output**
+
+10. The first match's tool_use id, timestamp, tool name, matcher name, and a 120-character
+    excerpt. Two distinct empties: `none matchable` (steps 1 or 5) and `none found` (a matcher
+    ran and hit nothing).
+
+**Listed cases this must satisfy** (also unit-checked against `scripts/autopsy-check.py`)
+
+- "don't modify scripts/rotate_keys.sh, build rotate_keys.py alongside it" → anchor
+  `path:scripts/rotate_keys.sh` only; `git add rotate_keys.py` is not a match.
+- "dont refernce ticket ids in code comments or commit messages, like (VLX-4127 option B),
+  customers read the changelog" → anchor `ticket:*`; a comment call or commit containing any
+  ticket id matches; a memory-file write or a ticket lookup does not.
+- "staging moved to argon-stg-02.internal last week, argon-stg-01 is decommissioned" → no
+  anchor, never matched; entities show both hosts.
+- "…output goes through logger.info, never print()" → anchor `ident:print()`.
 
 ## Stage 5 — Restatement
 

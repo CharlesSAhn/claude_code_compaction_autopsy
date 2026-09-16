@@ -10,10 +10,14 @@ Stage 2, score: verbatim substring of the normalized summary = 1.0; else max ove
   exact or Levenshtein <= 2 for non-entity tokens of length >= 6; entity tokens exact only.
 Stage 3, evidence: best passage span, matched tokens, entities in passage / anywhere, boundary uuid,
   preTokens, postTokens.
-Stage 4, first inconsistent action: first post-boundary tool_use matching the item; forbidden-path and
-  style-token keep file/Bash-write scope; forbidden-token and environment-fact use an allowlist only:
-  MCP tools named *comment*/*issue*/*note*/*reply*, `git commit` message text, Write/Edit/MultiEdit to
-  CHANGELOG*.
+Stage 4, first inconsistent action (docs/specs/algorithm-v1.md steps 1-10): only negation items get
+  anchors; trigger clause = trigger word to the first boundary (, ; and but so unless); concrete
+  anchors = entities inside the clause, else a class anchor from the class-noun list (ticket/host/path);
+  fact and positive items are never matched. Matchers: forbidden-path (file tool on the path, or Bash
+  write pattern naming it, literals stripped); forbidden-token on an allowlist only: MCP calls whose
+  name has a target noun (comment issue note reply ticket) and no read verb (get list search read
+  fetch find view query), git commit message text, CHANGELOG* edits; style-token on code files
+  (.py .ts .tsx .js .sh). No denylist.
 Stage 5, restated: a post-boundary human sentence scoring >= 0.6 against the item, or containing all
   item entities plus a negation word.
 
@@ -49,7 +53,16 @@ RO_CMD = {"cat", "ls", "grep", "rg", "find", "head", "tail", "wc"}
 GIT_RO = {"status", "log", "diff", "show", "ls-files", "rev-parse", "branch"}
 WRITE_PAT = re.compile(r"(^|[^<])>|\bsed\b.*-i|\btee\b|\bcp\b|\bmv\b|\brm\b|\bgit (rm|mv)\b|\btouch\b|\bchmod\b")
 FILE_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
-MCP_ALLOW = re.compile(r"comment|issue|note|reply", re.I)
+MCP_TARGET = re.compile(r"comment|issue|note|reply|ticket", re.I)   # stage 4 step 6a
+MCP_READ = re.compile(r"get|list|search|read|fetch|find|view|query", re.I)  # stage 4 step 6a
+CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")                      # stage 4 step 6d
+BOUNDARY = re.compile(r"[,;]|\band\b|\bbut\b|\bso\b|\bunless\b", re.I)  # stage 4 step 1
+CLASS_NOUNS = [  # stage 4 step 3: class nouns -> entity kind
+    ("ticket", re.compile(r"\b(ticket|issue) (ids?|numbers?|keys?)\b", re.I)),
+    ("host", re.compile(r"\bhost ?names?\b", re.I)),
+    ("path", re.compile(r"\b(file ?(paths?|names?)|paths?)\b", re.I)),
+]
+CLASS_RES = {k: r for k, r in ENT_RES}  # class anchor -> the entity regex of that kind
 
 
 def entities(s):
@@ -237,7 +250,7 @@ def written_text(name, inp):
 
 def allowlist_text(name, inp):
     """Text in scope for forbidden-token / environment-fact matchers, or None."""
-    if name.startswith("mcp__") and MCP_ALLOW.search(name):
+    if name.startswith("mcp__") and MCP_TARGET.search(name) and not MCP_READ.search(name):
         return json.dumps(inp)
     if name == "Bash":
         t = commit_message_text(inp.get("command", ""))
@@ -258,23 +271,37 @@ def trigger_clause(sent, pat):
     m = pat.search(sent)
     if not m:
         return ""
-    return re.split(r"[,;]|\bbut\b|\band\b", sent[m.start():], 1)[0]
+    return BOUNDARY.split(sent[m.start():], 1)[0]
+
+
+def anchors_of(item):
+    """Stage 4 steps 1-5. Returns list of (kind, value) where value is a concrete entity string,
+    or (kind, '*') for a class anchor. Fact and positive items have no anchors."""
+    cls, ents, sent = item["cls"], item["ents"], item["text"]
+    if cls != "negation":
+        return []
+    cl = trigger_clause(sent, NEG)
+    concrete = [(k, v) for k, v in ents if v in cl]
+    if concrete:
+        return concrete
+    for k, r in CLASS_NOUNS:
+        if r.search(cl):
+            return [(k, "*")]
+    return []
 
 
 def first_inconsistent(item, post_tools):
-    cls, ents, sent = item["cls"], item["ents"], item["text"]
+    sent = item["text"]
     matchers = []
-    if cls == "negation":
-        cl = trigger_clause(sent, NEG)
-        cents = [(k, v) for k, v in ents if v in cl]
-        matchers += [("forbidden_path", v) for k, v in cents if k == "path"]
-        if re.search(r"comment|commit|message|changelog", sent, re.I):
-            matchers += [("forbidden_token", v) for k, v in cents if k in ("ticket", "ident")]
-        matchers += [("style_token", v[:-1]) for k, v in cents if k == "ident" and v.endswith("()")]
-    if cls == "fact":
-        # The retired host must sit inside the clause that starts at the retire trigger word.
-        cl = trigger_clause(sent, RETIRE)
-        matchers += [("env_fact", v) for k, v in ents if k == "host" and v in cl]
+    for k, v in anchors_of(item):
+        if k == "path" and v != "*":
+            matchers.append(("forbidden_path", v))
+        elif k == "ident" and v.endswith("()"):
+            matchers.append(("style_token", v[:-1]))
+        elif k in ("ticket", "host", "ident"):
+            matchers.append(("forbidden_token", v if v != "*" else "*" + k))
+        elif k == "path":
+            matchers.append(("forbidden_token", "*path"))
     if not matchers:
         return "none matchable"
     for ts, tid, name, inp in post_tools:
@@ -290,12 +317,17 @@ def first_inconsistent(item, post_tools):
                         and WRITE_PAT.search(cmd):
                     hit = wt
             elif mn == "style_token":
-                if name in ("Edit", "Write", "MultiEdit") and ent in wt:
+                if name in ("Edit", "Write", "MultiEdit") and fp.endswith(CODE_EXT) and ent in wt:
                     hit = wt
-            else:  # forbidden_token / env_fact: allowlist only
+            else:  # forbidden_token: allowlist scope only (stage 4 step 6a-c)
                 at = allowlist_text(name, inp)
-                if at is not None and ent in at:
-                    hit = at
+                if at is not None:
+                    if ent.startswith("*"):
+                        m = CLASS_RES[ent[1:]].search(at)
+                        if m:
+                            hit, ent = at, m.group(0)
+                    elif ent in at:
+                        hit = at
             if hit:
                 p = hit.find(ent) if ent in hit else 0
                 ex = hit[max(0, p - 40):p + 80].replace("\n", " ")
@@ -378,7 +410,8 @@ def analyze(path, label):
                     break
             if rest != "no":
                 break
-        rows.append([label, it["text"], it["cls"], ", ".join("%s:%s" % (k, v) for k, v in it["ents"]), st,
+        anchor = ", ".join("%s:%s" % (k, v) for k, v in anchors_of(it))
+        rows.append([label, it["text"], it["cls"], ", ".join("%s:%s" % (k, v) for k, v in it["ents"]), anchor, st,
                      "%.2f" % sc["score"], sc["span"],
                      "L%d:%s → %s; pre=%s post=%s" % (it["line"], it["uuid"][:8], sc["idx"],
                                                       meta.get("preTokens"), meta.get("postTokens")),
@@ -452,14 +485,14 @@ def main():
         label = sid[:8] if re.match(r"^[0-9a-f-]{36}$", stem) or not stem else stem
         rows += analyze(f, a.session_label + label)
     red = Redactor() if a.redact else (lambda s: s)
-    cols = ["session", "item", "class", "entities", "status", "score", "matched span", "anchors",
-            "first inconsistent action", "restated"]
+    cols = ["session", "item", "class", "entities", "matcher anchor", "status", "score", "matched span",
+            "anchors", "first inconsistent action", "restated"]
     print("| " + " | ".join(cols) + " |")
     print("|" + "---|" * len(cols))
     for r in rows:
         cells = [red(str(x)) for x in r]  # redact full text first, then truncate for display
         cells[1] = cells[1][:60]
-        cells[8] = re.sub(r"`([^`]*)`", lambda m: "`" + m.group(1)[:60] + "`", cells[8])
+        cells[9] = re.sub(r"`([^`]*)`", lambda m: "`" + m.group(1)[:60] + "`", cells[9])
         print("| " + " | ".join(c.replace("|", "\\|").replace("\n", " ") for c in cells) + " |")
 
 

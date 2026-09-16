@@ -11,7 +11,8 @@
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks",
+    "test:pending": "vitest run --config vitest.pending.config.ts"
   },
   "dependencies": {
     "react": "^19.2.8",

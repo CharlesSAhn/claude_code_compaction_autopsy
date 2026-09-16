@@ -417,20 +417,8 @@ def session_id(recs):
     return ""
 
 
-def analyze(path, label):
-    recs = load(path)
-    bidx = next((k for k, (_, r) in enumerate(recs)
-                 if r.get("type") == "system" and r.get("subtype") == "compact_boundary"), None)
-    if bidx is None:
-        sys.stderr.write("skip %s: no compact_boundary\n" % path)
-        return []
-    _, b = recs[bidx]
-    meta = b.get("compactMetadata", {}) or {}
-    summ = next((r for _, r in recs[bidx:] if r.get("type") == "user" and r.get("isCompactSummary")), None)
-    if summ is None:
-        sys.stderr.write("skip %s: no isCompactSummary record\n" % path)
-        return []
-    summary = text_of(summ) or ""
+def extract_items(recs, bidx):
+    """Stage 1 over the records before the boundary at index bidx."""
     items, seen = [], set()
     for i, r in recs[:bidx]:
         if not is_human(r):
@@ -448,6 +436,44 @@ def analyze(path, label):
                 continue
             seen.add(n)
             items.append(dict(text=s, cls=cls, ents=e, uuid=r.get("uuid", ""), ts=r.get("timestamp", ""), line=i))
+    return items
+
+
+def items_json(path):
+    """--items-json: stage-1 items for every boundary, as the fixture builder consumes them."""
+    recs = load(path)
+    bounds = [k for k, (_, r) in enumerate(recs) if r.get("type") == "system" and r.get("subtype") == "compact_boundary"]
+    out = {"sessionId": session_id(recs), "items": []}
+    prev = 0
+    for ci, bidx in enumerate(bounds):
+        for n, it in enumerate(extract_items(recs[prev:bidx], bidx - prev)):
+            out["items"].append({
+                "id": "%d:%d:%d" % (ci, it["line"], n),
+                "compactionIndex": ci,
+                "text": it["text"], "class": it["cls"],
+                "entities": [{"kind": k, "value": v} for k, v in it["ents"]],
+                "anchors": [{"kind": k, "value": v} for k, v in anchors_of(it)],
+                "origin": {"messageUuid": it["uuid"], "ts": it["ts"], "line": it["line"]},
+            })
+        prev = bidx + 1
+    return out
+
+
+def analyze(path, label):
+    recs = load(path)
+    bidx = next((k for k, (_, r) in enumerate(recs)
+                 if r.get("type") == "system" and r.get("subtype") == "compact_boundary"), None)
+    if bidx is None:
+        sys.stderr.write("skip %s: no compact_boundary\n" % path)
+        return []
+    _, b = recs[bidx]
+    meta = b.get("compactMetadata", {}) or {}
+    summ = next((r for _, r in recs[bidx:] if r.get("type") == "user" and r.get("isCompactSummary")), None)
+    if summ is None:
+        sys.stderr.write("skip %s: no isCompactSummary record\n" % path)
+        return []
+    summary = text_of(summ) or ""
+    items = extract_items(recs, bidx)
     post_tools = []
     for _, r in recs[bidx + 1:]:
         if r.get("type") == "assistant":
@@ -524,7 +550,11 @@ def main():
     ap.add_argument("--projects", action="store_true")
     ap.add_argument("--redact", action="store_true")
     ap.add_argument("--session-label", default="")
+    ap.add_argument("--items-json", action="store_true", help="print stage-1 items as JSON and exit")
     a = ap.parse_args()
+    if a.items_json:
+        print(json.dumps([items_json(f) for f in a.files], indent=1))
+        return
     targets = list(a.files)
     if a.projects:
         targets += sorted(glob.glob(os.path.expanduser("~/.claude/projects/*/*.jsonl")))

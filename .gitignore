@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python bytecode from experiment generators
+__pycache__/
+*.pyc

@@ -225,10 +225,15 @@ export const INCONSISTENT_LABEL = 'first observed downstream action inconsistent
 /** Printed with every downstream result. CAUSED has no type, field, or flag: the tool never asserts it. */
 export const CLOSING_LINE = 'We show the loss and the action. We do not claim one caused the other.' as const
 
+/**
+ * "Status entity": an anchor entity when the item has anchors (equal value, or the anchor's kind
+ * for a class anchor), every entity otherwise. Present means as a whole token, or for a path a
+ * token ending in '/' + the value; never a substring.
+ */
 export const STATUS_MEANING = {
-  PRESERVED: 'score at or above the preserved threshold and every entity present in the best passage',
-  DEGRADED: 'not preserved, and either score at or above the degraded threshold or an entity present somewhere in the summary',
-  LOST: 'no passage at or above the degraded threshold and no entity of the item anywhere in the summary',
+  PRESERVED: 'score at or above the preserved threshold and every status entity present in the best passage',
+  DEGRADED: 'not preserved, and either score at or above the degraded threshold or a status entity present somewhere in the summary',
+  LOST: 'no passage at or above the degraded threshold and no status entity of the item anywhere in the summary',
 } as const
 
 // ---------------------------------------------------------------------------
@@ -247,7 +252,8 @@ export const THRESHOLDS: Thresholds = {
   preserved: 0.75,
   degraded: 0.35,
   restated: 0.6,
-  fuzzyMaxDistance: 2,
+  /** One edit. At two, `ticket` matched `picked` and `option` matched `portion` (T1-fixtures, 2026-09-16). */
+  fuzzyMaxDistance: 1,
   fuzzyMinTokenLength: 6,
 }
 
@@ -276,7 +282,8 @@ export const PATTERNS = {
 } as const
 
 export const WORDS = {
-  negation: ["don't", 'dont', 'do not', 'never', 'avoid', 'stop', 'no longer'],
+  /** `stop` was dropped 2026-09-16: "the job will stop at 3am on host" is not a rule. */
+  negation: ["don't", 'dont', 'do not', 'never', 'avoid', 'no longer'],
   positive: ['always', 'only', 'must', 'keep', 'use'],
   fact: ['moved to', 'decommissioned', 'is now', 'is gone', 'renamed', 'deprecated'],
   clauseBoundary: [',', ';', 'and', 'but', 'so', 'unless'],

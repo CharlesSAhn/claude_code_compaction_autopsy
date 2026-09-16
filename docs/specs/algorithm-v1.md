@@ -23,7 +23,8 @@ Apostrophes are normalized (curly to straight) before trigger matching. Sentence
 `!`, `?` only when followed by whitespace or end of text, and on bullet or numbered markers only
 at line start. A sentence of `LIMITS.itemMinChars` to `LIMITS.itemMaxChars` characters (12 to
 300) becomes an item if it matches one class, with precedence negation, then positive, then fact:
-- negation: `don't | dont | do not | never | avoid | stop | no longer`
+- negation: `don't | dont | do not | never | avoid | no longer` (`stop` dropped: "the job will
+  stop at 3am on host" is not a rule)
 - positive: `always | only | must | keep | use` and at least one entity
 - fact: `moved to | decommissioned | is now | is gone | renamed | deprecated` and at least one entity
 
@@ -49,14 +50,17 @@ Normalize both sides: lowercase; remove backticks, straight and curly quotes, ap
 3. Passage score = matched item tokens ÷ item tokens. Tokens `PATTERNS.token`
    (`[a-z0-9_.-]+` plus an optional trailing `()`), length ≥ 3, stopwords removed; leading or
    trailing punctuation is never part of a token. A token matches exactly, or by Levenshtein
-   distance ≤ 2 for non-entity tokens of length ≥ 6 (`refernce` matches `reference`). Entity
-   tokens match exactly only.
+   distance ≤ 1 for non-entity tokens of length ≥ 6 (`refernce` matches `reference`; at 2,
+   `ticket` matched `picked`). Entity tokens match exactly only.
 
-Classes:
-- PRESERVED: score ≥ 0.75 and every entity present in the best passage
-- DEGRADED: not preserved, and score ≥ 0.35 or any entity present anywhere in the summary
+Classes, over the item's status entities (its anchor entities when it has anchors: equal value,
+or the anchor's kind for a class anchor; every entity otherwise). An entity is present only as a
+whole token: normalized value equals a token, or a path token ends with `/` + the value.
+- PRESERVED: score ≥ 0.75 and every status entity present in the best passage
+- DEGRADED: not preserved, and score ≥ 0.35 or any status entity present anywhere in the summary
   (the shape of the original story: the ticket survived as a work item, the rule did not)
-- LOST: otherwise
+- LOST: otherwise (the file rule whose file is gone from the summary, while the file that was
+  built next to it is still there)
 
 Paraphrase beyond token overlap lands in DEGRADED and the report says the score is overlap-based.
 
@@ -66,7 +70,8 @@ Item text, message uuid, timestamp, JSONL line. Boundary uuid, `preTokens`, `pos
 `passage.text` raw, `matches` as character offsets into it with the raw token, fuzzy flag and
 distance (the source of truth). Matched span, derived: the smallest contiguous span of the best
 passage covering all matches, `«…»` exact, `«~…»` fuzzy. Summary line index. Entities found in
-the best passage and anywhere in the summary, as written in the item. The thresholds used.
+the best passage and anywhere in the summary, every entity, as written in the item, as whole
+tokens. The thresholds used.
 Everything is greppable in the transcript.
 
 ## Stage 4 — First observed downstream action inconsistent with an item
@@ -81,7 +86,7 @@ deterministic; the word lists are closed.
    `none matchable`. Both hosts of a fact still appear in the entities column.
 2. Trigger clause = the text from the negation trigger word to the first boundary. Boundary
    list: `,` `;` ` and ` ` but ` ` so ` ` unless `. Negation trigger list: `don't` `dont`
-   `do not` `never` `avoid` `stop` `no longer`.
+   `do not` `never` `avoid` `no longer`.
 3. Concrete anchors = every entity (path, ticket, host, ident) whose text lies inside the
    trigger clause. Entities outside the clause are examples or context: shown in the entities
    column, never anchors.

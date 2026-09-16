@@ -28,14 +28,21 @@ stage 1 runs first. Extraction and anchor extraction are therefore the stages th
 ## Statuses
 
 `PRESERVED`, `DEGRADED`, `LOST`, meanings in `STATUS_MEANING`:
-- PRESERVED: score ≥ `thresholds.preserved` (0.75) and every entity of the item is in the best passage.
-- DEGRADED: not preserved, and score ≥ `thresholds.degraded` (0.35) or any entity of the item
-  appears anywhere in the summary. Partial loss; the common case in real data.
-- LOST: no passage reaches the degraded threshold and no entity appears anywhere in the summary.
+- PRESERVED: score ≥ `thresholds.preserved` (0.75) and every status entity of the item is in
+  the best passage.
+- DEGRADED: not preserved, and score ≥ `thresholds.degraded` (0.35) or any status entity of the
+  item appears anywhere in the summary. Partial loss; the common case in real data.
+- LOST: no passage reaches the degraded threshold and no status entity appears anywhere in the
+  summary.
 
-"Entity" in these rules means every entity of the item. An open ruling (T1, type feedback 2)
-may narrow it to the item's anchor entities when it has anchors. A status is a statement about
-the summary text only.
+The status entities of an item are its anchor entities when it has anchors: the entities an
+anchor names, by equal value, or by kind for a class anchor (`*`). An item with no anchors uses
+every entity. The rule is about what it forbids; a non-anchor entity surviving elsewhere in the
+summary (the file that was built, next to the file that was off-limits) does not rescue it
+(ruling 2026-09-16, T1-fixtures). An entity is present in a passage or in the summary only as a
+whole token: its normalized value equals a token, or, for a path, a token ends with `/` + the
+value; the same rule as the downstream path match. `rotate_keys.py` is never a partial match for
+`rotate_keys.sh`. A status is a statement about the summary text only.
 
 ## Survival scoring
 
@@ -54,8 +61,10 @@ the summary text only.
   from `WORDS.structuralHeadings`; the section runs to the next heading; `structuralSection` is
   the heading text whenever the best passage lies in such a section, verbatim or not.
 - Typos and light paraphrase: non-entity tokens of at least `fuzzyMinTokenLength` (6) match at
-  Levenshtein distance ≤ `fuzzyMaxDistance` (2). Entity tokens match exactly. Heavy paraphrase
-  lands in DEGRADED. The tool never says "meaning preserved"; it reports score and matches.
+  Levenshtein distance ≤ `fuzzyMaxDistance` (1): one edit, so `refernce` matches `reference`
+  and `options` matches `option`, while `ticket` does not match `picked` (the first fixture
+  scored a log-analysis line above the work-item line at distance 2). Entity tokens match
+  exactly. Heavy paraphrase lands in DEGRADED. The tool never says "meaning preserved"; it reports score and matches.
 
 ## Evidence
 
@@ -63,8 +72,8 @@ the summary text only.
   it, with the raw token text, fuzzy flag, and distance; they are the source of truth.
   `markedSpan` is derived from them: the smallest span covering all matches, `«…»` for exact,
   `«~…»` for fuzzy. `entitiesInPassage` and `entitiesAnywhere` hold the item's entity values as
-  written in the item, found by normalized comparison. Every value is checkable by hand in the
-  fixture: the raw strings appear there.
+  written in the item, every entity, found as whole tokens (the rule under Statuses). Every
+  value is checkable by hand in the fixture: the raw strings appear there.
 - Provenance of the item: `origin` = user message uuid, timestamp, JSONL line. Nothing else in
   v1. Survival outside the summary (auto-memory, preserved segment) is not represented; see
   `docs/specs/session-files.md`.
@@ -77,9 +86,12 @@ the summary text only.
 
 `observed-sanitized` (real session file, redacted), `experiment-derived` (scratch run, `run`
 names it), `constructed` (derived from another session by a re-runnable script, `note` is one
-line shown in the UI). The default demo is an observed-sanitized or experiment-derived session
-with the most pre-labeled items; a session with no items counts as zero. Constructed is never
-the default.
+line shown in the UI). Provenance ranks in that order, observed-sanitized highest. The default
+demo is the highest-ranked session that has a downstream action, that is, at least one item
+whose `downstream.result` is `matched` after `analyze`; ties go to the most pre-labeled items,
+then to list order. When no session has one, the highest-ranked session with the most items
+(a session with no items counts as zero). A constructed session is the default only by this
+rule, never by preference.
 
 ## Regions
 

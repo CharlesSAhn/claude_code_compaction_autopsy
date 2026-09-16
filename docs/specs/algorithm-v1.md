@@ -149,7 +149,7 @@ On this machine's data (three scratch runs, one probe, 2026-09-16), these fields
 reliably: status, score, closest passage (matched span), provenance (anchors, entities).
 
 These never fired here and are optional fields: first inconsistent action, restatement, and the
-DEGRADED class. They are exercised by the ticket-case fixture, built from the user's account of a
-real event that cannot be shown and labeled that way in data and UI. A row where an optional
+DEGRADED class. They are exercised by the constructed loss fixture, built from the generated argon
+data and labeled as constructed in data and UI. A row where an optional
 field is empty is a valid, complete row: "not checkable" and "none found" are the normal case
 and are shown as results, never hidden.

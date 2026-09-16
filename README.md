@@ -13,5 +13,5 @@ survived verbatim in the summary and every follow-up honored it: this version of
 quotes constraints into the summary. The losses that motivated the tool came from a different
 week, possibly a different version. Compaction behavior changes across releases; that is part
 of why the tool exists. See `docs/experiments/findings.md` and `docs/specs/algorithm-v1.md`.
-The bundled healthy case is real and sanitized. The ticket case is built from the author's
-account of a real event that cannot be shown, and is labeled that way.
+The bundled healthy case is a real, sanitized run. The loss case is constructed from the same
+generated data and labeled as constructed.

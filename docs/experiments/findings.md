@@ -55,10 +55,10 @@ Cost scales with requests × context size, since every tool call re-sends the wh
 ## Version dependence (user's finding, 2026-09-16)
 
 Run 1 compacted at about 1.06M tokens and kept every rule verbatim, so this version of Claude
-Code (2.1.273, the version in these transcripts) quotes constraints into the summary. The user's
-real losses came from a different week, possibly a different version. Compaction behavior
-changes across releases; that is part of why the tool exists. The real losses cannot be shown:
-the ticket case in the demo is built from the user's account of the event and labeled that way.
+Code (2.1.273, the version in these transcripts) quotes constraints into the summary. Compaction
+behavior changes across releases; that is part of why the tool exists. The demo focuses on the
+data generated here: a real healthy run, and a loss case constructed from the same argon data,
+labeled as constructed.
 
 ## Algorithm v1 check on this data
 
@@ -66,8 +66,8 @@ the ticket case in the demo is built from the user's account of the event and la
 and the probe: 9 items, all PRESERVED at score 1.00, provenance and matched span populated on
 every row. First inconsistent action was `none found` or `none matchable` on every row,
 restatement was `no` on every row, and DEGRADED never occurred. Those three are optional fields
-in the contract, exercised only by the ticket-case fixture built from the user's account, and
-shown as normal results ("not checkable", "none found") when empty.
+in the contract, exercised only by the constructed loss fixture, and shown as normal results
+("not checkable", "none found") when empty.
 
 ## Consequences for the product
 
@@ -75,10 +75,10 @@ shown as normal results ("not checkable", "none found") when empty.
   come from user prompts or from file content, up to 1M tokens of burial. We could not observe
   a LOST or DEGRADED constraint.
 - Demo data: the healthy case is real and goes first, from run 1 or run 2, which have tracked
-  items (run 3 has zero items in the user's messages, so it would show nothing). The ticket case
-  is built from the user's account of a real event that cannot be shown, labeled that way in
-  data and UI. Fixtures are committed JSON; the script that builds them is a manual dev tool,
-  never part of the build.
+  items (run 3 has zero items in the user's messages, so it would show nothing). The loss case
+  is constructed from the same generated argon data (the VLX-4127 ticket rule and the
+  rotate_keys.sh rule) and labeled as constructed in data and UI. Fixtures are committed JSON;
+  the script that builds them is a manual dev tool, never part of the build.
 - The tool's value on real data is then mostly null results and provenance, plus the memory-file
   survival path. That is still the honest answer to "what did compaction lose".
 - A loss may exist with older Claude Code versions, other summarizer settings, or rules phrased

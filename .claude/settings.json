@@ -1,0 +1,65 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git commit*--no-verify*)",
+      "Bash(git config*core.hooksPath*)",
+      "Bash(git -c core.hooksPath*)",
+      "Bash(git push)",
+      "Bash(git fetch)",
+      "Bash(git pull)",
+      "Bash(git clone)",
+      "Bash(git remote)",
+      "Bash(git ls-remote)",
+      "Bash(aws)",
+      "Bash(curl)",
+      "Bash(wget)",
+      "Bash(ssh)",
+      "Bash(scp)",
+      "Bash(sftp)",
+      "Bash(rsync)",
+      "Bash(gh)",
+      "Bash(npm publish)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git clone:*)",
+      "Bash(git remote:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(aws:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(sftp:*)",
+      "Bash(rsync:*)",
+      "Bash(gh:*)",
+      "Bash(npm publish:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-contracts.sh",
+            "timeout": 10,
+            "statusMessage": "Checking contract freeze"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-egress.sh",
+            "timeout": 10,
+            "statusMessage": "Checking egress gate"
+          }
+        ]
+      }
+    ]
+  }
+}

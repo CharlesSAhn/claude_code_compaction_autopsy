@@ -9,9 +9,11 @@
  *     EventSource, `?url` imports, or dynamic import() with a non-literal specifier.
  *     Demo data is bundled through static imports from src/fixtures.
  * R4  The domain has exactly one public entry point, src/domain/index.ts.
+ * R5  UI independence: no file under src/ui, tests included, imports from src/fixtures.
+ *     Sessions reach the UI through a SessionSource prop, built in src/App.tsx.
  *
  * Test files (*.test.ts, *.test.tsx) are exempt from R1 and R2 so they can pull
- * fixtures and reach internals, but not from R3.
+ * fixtures and reach internals, but not from R3 or R5.
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
@@ -19,6 +21,8 @@ import { describe, expect, it } from 'vitest'
 
 const SRC = resolve(__dirname, '..')
 const DOMAIN = join(SRC, 'domain')
+const UI = join(SRC, 'ui')
+const FIXTURES = join(SRC, 'fixtures')
 const THIS_FILE = resolve(__filename)
 
 interface ImportSite {
@@ -135,6 +139,20 @@ describe('architecture', () => {
       for (const site of importsOf(file)) {
         if (/\?url$/.test(site.specifier)) {
           violations.push(describeViolation(site, '?url import becomes a runtime request'))
+        }
+      }
+    }
+    expect(violations).toEqual([])
+  })
+
+  it('R5: src/ui never imports from src/fixtures', () => {
+    const violations: string[] = []
+    for (const file of allFiles) {
+      if (!isInside(file, UI)) continue
+      for (const site of importsOf(file)) {
+        if (!isRelative(site.specifier)) continue
+        if (isInside(resolveTarget(file, site.specifier), FIXTURES)) {
+          violations.push(describeViolation(site, 'src/ui reaches src/fixtures; sessions arrive as a SessionSource prop'))
         }
       }
     }

@@ -28,8 +28,10 @@ Enforced by `src/specs/architecture.test.ts`. If a change needs a rule to bend, 
   `EventSource`, `?url` imports, or dynamic `import()` with a non-literal specifier.
   Demo data is bundled through static imports from `src/fixtures`.
 - R4 The domain has exactly one public entry point, `src/domain/index.ts`.
+- R5 UI independence: no file under `src/ui`, tests included, imports from `src/fixtures`.
+  Sessions reach the UI through a `SessionSource` prop, built in `src/App.tsx`.
 
-Test files (`*.test.ts`, `*.test.tsx`) are exempt from R1 and R2, not from R3.
+Test files (`*.test.ts`, `*.test.tsx`) are exempt from R1 and R2, not from R3 or R5.
 
 ## The three claims (contract v1, `src/domain/contract.ts`, `docs/contracts/contract.md`)
 

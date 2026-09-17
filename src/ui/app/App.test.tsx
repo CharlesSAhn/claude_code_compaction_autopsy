@@ -8,18 +8,18 @@ import { describe, expect, it } from 'vitest'
 import { App } from './App.tsx'
 import { FOOTER_LINE } from './Footer.tsx'
 import { NOT_ANALYZED } from './slots.tsx'
-import { stubSource } from '../stub-analyze.ts'
+import { analyzedSource } from '../../source.ts'
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
 }
 
 describe('shell smoke', () => {
-  for (const ref of stubSource.list()) {
+  for (const ref of analyzedSource.list()) {
     it(`renders ${ref.id}`, () => {
-      const session = stubSource.get(ref.id)
+      const session = analyzedSource.get(ref.id)
       if (session === undefined) throw new Error(`missing session ${ref.id}`)
-      const html = renderToString(<App source={stubSource} initialSearch={`?session=${ref.id}`} />)
+      const html = renderToString(<App source={analyzedSource} initialSearch={`?session=${ref.id}`} />)
       expect(html).toContain(escapeHtml(ref.label))
       expect(html).toContain(ref.provenance.kind.toUpperCase())
       if (ref.provenance.kind === 'constructed') expect(html).toContain(escapeHtml(ref.provenance.note))
@@ -36,8 +36,8 @@ describe('shell smoke', () => {
   }
 
   it('opens on the default session (the ticket case) with no query string', () => {
-    const html = renderToString(<App source={stubSource} initialSearch="" />)
-    expect(stubSource.defaultId()).toBe('constructed-ticket')
+    const html = renderToString(<App source={analyzedSource} initialSearch="" />)
+    expect(analyzedSource.defaultId()).toBe('constructed-ticket')
     expect(html).toContain('<option value="constructed-ticket" selected="">')
   })
 })

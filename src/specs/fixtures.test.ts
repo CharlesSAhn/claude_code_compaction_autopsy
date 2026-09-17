@@ -1,7 +1,7 @@
 /**
  * The committed fixtures obey the contract and the T1 acceptance criteria. Runs in the default
- * suite. Expected analysis results are elsewhere (src/domain/pending), where the analyzer cannot
- * see them.
+ * suite. Expected analysis results are elsewhere (src/domain/*.expected.test.ts), where the
+ * analyzer cannot see them.
  */
 import { describe, expect, it } from 'vitest'
 import { fixtureSource, fixtures } from '../fixtures/index.ts'

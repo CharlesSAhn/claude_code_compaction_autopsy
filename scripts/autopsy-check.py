@@ -450,13 +450,14 @@ def path_matches(fp, anchor):
 
 
 def bash_write_hit(cmd, anchor):
-    """A write pattern applied to the anchor as a standalone token, literals stripped."""
+    """A write pattern applied to the anchor as a standalone token, literals stripped.
+    The token may be a longer path ending with '/' + anchor, like the file-tool path match."""
     c = strip_literals(cmd)
-    A = r"(?<![\w/.\-])" + re.escape(anchor) + r"(?![\w.\-])"
+    A = r"(?<![\w.\-])" + re.escape(anchor) + r"(?![\w.\-])"
     for seg in re.split(r"\|\||&&|[|;\n]", c):
         if not re.search(A, seg):
             continue
-        if re.search(r"(?:^|[^<>])>>?\s*" + A, seg):
+        if re.search(r"(?:^|[^<>])>>?\s*(?:\S*/)?" + A, seg):
             return True
         s = seg.strip()
         if re.match(r"sed\b", s) and re.search(r"(?:^|\s)-i\b", s):

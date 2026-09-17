@@ -116,12 +116,16 @@ export function pathMatches(fp: string, anchor: string): boolean {
   return fp === anchor || fp.endsWith('/' + anchor)
 }
 
-/** A write pattern applied to the anchor as a standalone token, literals stripped. */
+/**
+ * A write pattern applied to the anchor as a standalone token, literals stripped. The token may
+ * be a longer path that ends with `/` + anchor (`/repo/scripts/x.sh`, `./scripts/x.sh`), the same
+ * rule as the file-tool path match; a longer suffix (`old_scripts/x.sh`, `x.sh.bak`) is not it.
+ */
 export function bashWriteHit(cmd: string, anchor: string): boolean {
   const c = stripLiterals(cmd)
-  const A = String.raw`(?<![\w/.\-])` + escapeRegex(anchor) + String.raw`(?![\w.\-])`
+  const A = String.raw`(?<![\w.\-])` + escapeRegex(anchor) + String.raw`(?![\w.\-])`
   const anchorRe = new RegExp(A)
-  const redirectRe = new RegExp(String.raw`(?:^|[^<>])>>?\s*` + A)
+  const redirectRe = new RegExp(String.raw`(?:^|[^<>])>>?\s*(?:\S*/)?` + A)
   for (const seg of c.split(/\|\||&&|[|;\n]/)) {
     if (!anchorRe.test(seg)) continue
     if (redirectRe.test(seg)) return true

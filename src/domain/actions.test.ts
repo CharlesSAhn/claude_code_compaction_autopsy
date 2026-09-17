@@ -191,3 +191,19 @@ describe('MCP scope by whole name parts', () => {
     expect(mcpInScope('Bash')).toBe(false)
   })
 })
+
+describe('file rule: Bash write through a longer path', () => {
+  const item = itemOf(FILE_RULE)
+  it('an absolute or ./ path ending in / + anchor matches, the same rule as the file tools', () => {
+    for (const cmd of ['rm /repo/scripts/rotate_keys.sh', 'sed -i "s/a/b/" ./scripts/rotate_keys.sh', 'echo x >> /repo/scripts/rotate_keys.sh']) {
+      const d = firstInconsistent(item, [call('Bash', { command: cmd })], undefined)
+      expect(d.result, cmd).toBe('matched')
+      expect(d.hit?.artifact, cmd).toBe('bash_write')
+    }
+  })
+  it('a longer suffix or a read is not a write to the file', () => {
+    for (const cmd of ['rm old_scripts/rotate_keys.sh', 'rm scripts/rotate_keys.sh.bak', 'cat /repo/scripts/rotate_keys.sh']) {
+      expect(firstInconsistent(item, [call('Bash', { command: cmd })], undefined).result, cmd).toBe('none_found')
+    }
+  })
+})

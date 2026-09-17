@@ -114,6 +114,12 @@ body {
   margin: 0;
 }
 
+.header__subtitle {
+  margin: 2px 0 0;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
 .header__picker {
   display: flex;
   align-items: center;
@@ -347,11 +353,24 @@ body {
   font-size: 0.8125rem;
 }
 .start-here {
+  display: block;
+  width: 100%;
   margin: 0 0 8px;
   padding: 4px 10px;
+  border: 0;
   border-left: 4px solid var(--accent);
+  border-radius: 0;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: inherit;
+  font: inherit;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-here:hover,
+.start-here:focus-visible {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .view-toggle {

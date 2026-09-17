@@ -66,7 +66,21 @@ that has a downstream action. The healthy run ranks higher but has none.
   later action. `CLOSING_LINE` is printed under every downstream result, and the healthy line
   under question 5 appears only when no item is matched.
 - The footer on every view says the same thing: demo data is illustrative, items are
-  pre-labeled, survival, downstream, and restatement are computed in the browser.
+  pre-labeled, and this README says what the analysis does and doesn't do.
+
+## Future work
+
+Ranked by an evaluator walk of the live URL (`docs/reviews/2026-09-17-evaluator.md`). None of
+these are started.
+
+1. Run it on your own transcript. Paste a JSONL or pick a local file; nothing uploaded, the
+   analysis stays in the browser. The adapter and the extraction stage already exist and would
+   finally be exercised on a session that is not pre-labeled. Needs a reading of the
+   no-runtime-loading rule (R3) for a file picker.
+2. Say in words what a DEGRADED or LOST passage kept and dropped, from the entities and matches
+   the survival stage already records. Today the reader infers it from the marks and the score.
+3. Irregular timestamps in the two constructed fixtures. Every message after the boundary sits
+   exactly one minute apart, which reads synthetic even with the constructed label.
 
 ## Run locally
 
@@ -91,12 +105,12 @@ browser download is needed. `BASE_URL` picks the target; the default is the prev
 `npm run screenshots -- <base url>` writes `1-landing.png`, `2-compaction-clicked.png`,
 `3-lost-trace.png`, and `4-story.png` into `screenshots/`, which is gitignored.
 
-## Deployed at
+## Where it runs
 
-URL: http://charles-ahn-compaction-autopsy.s3-website-us-east-1.amazonaws.com
-
-S3 static website, bucket `charles-ahn-compaction-autopsy`, us-east-1, plain HTTP. Deployed
-2026-09-17 from `a291e9d`.
+On your machine. The intended use is a local run against your own Claude Code session logs,
+which never leave the computer they were written on (see "Run locally" above). A public copy
+of the demo build was put on an S3 static website for an evaluator pass, temporarily; it is
+not the product, and `docs/deployment.md` describes that step only for the record.
 
 ## Layout of the repo
 

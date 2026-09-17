@@ -27,6 +27,9 @@ function tokens(c: Compaction): string {
   return c.postTokens === undefined ? `${c.preTokens} → after: not recorded` : `${c.preTokens} → ${c.postTokens}`
 }
 
+/** One line of purpose for a visitor who arrives with the URL and nothing else. */
+export const SUBTITLE = 'What a Claude Code compaction kept and dropped, and what the session did next.'
+
 export function Header({ refs, session, compactionIndex, onSelectSession }: HeaderProps) {
   const compaction = session.compactions[compactionIndex]
   const detail = provenanceDetail(session.provenance)
@@ -34,7 +37,10 @@ export function Header({ refs, session, compactionIndex, onSelectSession }: Head
   return (
     <header className="header">
       <div className="header__row">
-        <h1 className="header__title">Compaction Autopsy</h1>
+        <div>
+          <h1 className="header__title">Compaction Autopsy</h1>
+          <p className="header__subtitle">{SUBTITLE}</p>
+        </div>
         <label className="header__picker">
           <span className="header__picker-label" id={`${pickerId}-label`}>
             Session
@@ -58,17 +64,17 @@ export function Header({ refs, session, compactionIndex, onSelectSession }: Head
         {detail !== undefined ? <span className="provenance__detail">{detail}</span> : null}
       </p>
       <p className="facts">
-        <span>{session.claudeCodeVersion}</span>
+        <span>{`Claude Code ${session.claudeCodeVersion}`}</span>
         <span aria-hidden="true"> · </span>
-        <span>{session.model}</span>
+        <span>{`model ${session.model}`}</span>
         {compaction ? (
           <>
             <span aria-hidden="true"> · </span>
-            <span>{compaction.trigger}</span>
+            <span>{`trigger ${compaction.trigger}`}</span>
             <span aria-hidden="true"> · </span>
-            <span>{tokens(compaction)}</span>
+            <span>{`tokens ${tokens(compaction)}`}</span>
             <span aria-hidden="true"> · </span>
-            <span>{compaction.ts}</span>
+            <span>{`boundary ${compaction.ts}`}</span>
           </>
         ) : (
           <>

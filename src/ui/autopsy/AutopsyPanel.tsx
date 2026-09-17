@@ -21,6 +21,8 @@ export interface AutopsyPanelProps {
   hoveredItemId?: string | null
   /** The one-line "Start here" hint above the questions, until the first selection. */
   showStartHere?: boolean
+  /** The "Start here" hint clicked: select the compaction and bring its timeline bar into view. */
+  onStartHere?: () => void
   /** Which of the two the middle section shows; the caller keeps it in the URL's `view=`. */
   view?: PanelView
   onChangeView?: (view: PanelView) => void
@@ -39,7 +41,7 @@ function statusWord(row: ItemReport): string {
 function afterCell(row: ItemReport, scanned: number): string {
   const d = row.downstream
   if (d.result === 'matched' && d.hit) return `INCONSISTENT ACTION · ${d.hit.tool} · ${formatTime(d.hit.ts)}`
-  if (d.result === 'none_found') return `NONE FOUND · ${scanned} tool calls after`
+  if (d.result === 'none_found') return `NONE FOUND · ${plural(scanned, 'tool call')} after`
   return 'NOT CHECKABLE'
 }
 
@@ -49,6 +51,7 @@ export function AutopsyPanel({
   selectedItemId,
   hoveredItemId,
   showStartHere = false,
+  onStartHere,
   view = 'ledger',
   onChangeView,
   story,
@@ -69,7 +72,11 @@ export function AutopsyPanel({
         {compaction ? <span className="autopsy__sub">{`compaction ${report.compactionIndex + 1} of ${session.compactions.length} · ${compaction.trigger} · ${formatTime(compaction.ts)} UTC`}</span> : null}
       </h2>
 
-      {showStartHere ? <p className="start-here">{START_HERE}</p> : null}
+      {showStartHere ? (
+        <button type="button" className="start-here" onClick={onStartHere}>
+          {START_HERE}
+        </button>
+      ) : null}
 
       <ol className="questions">
         <li>

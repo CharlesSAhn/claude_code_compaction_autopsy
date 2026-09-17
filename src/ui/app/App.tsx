@@ -95,6 +95,11 @@ export function App({ source, analyzed, initialSearch }: AppProps) {
     setHighlightUuid(uuid)
   }
 
+  const onStartHere = () => {
+    update({ compaction: compactionIndex, item: undefined, view: 'ledger' })
+    document.querySelector<HTMLElement>('.timeline__boundary')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+
   const onTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement
     const boundary = target.closest<HTMLElement>('.timeline__boundary')
@@ -126,6 +131,7 @@ export function App({ source, analyzed, initialSearch }: AppProps) {
               selectedItemId={state.item}
               hoveredItemId={hoveredItemId}
               showStartHere={showStartHere}
+              onStartHere={onStartHere}
               view={panelView}
               onChangeView={(v) => update({ view: v })}
               story={

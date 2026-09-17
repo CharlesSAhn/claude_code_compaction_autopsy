@@ -101,3 +101,13 @@ integrator from the lane reports on 2026-09-16 (T2-engine, T3-ui-shell, T6-story
   (path directory prefix, quoted redirect target, heading whole words, changelog casing). Align
   it with the next refreeze; the fixtures do not exercise those edges, so parity is unchanged.
 
+Evaluator walk, 2026-09-17 (`docs/reviews/2026-09-17-evaluator.md`), not fixed in T8:
+- E1: run the analysis on the visitor's own transcript, paste or local file picker, nothing
+  uploaded; needs an R3 reading for a file picker. A feature, listed in the README under
+  "Future work".
+- E4: say in words what a DEGRADED or LOST passage kept and dropped, from `entitiesInPassage`
+  and `matches`; touches the trace's meaning, so it goes with the v3 contract round.
+- E5c: the two constructed fixtures place every post-boundary message exactly one minute
+  apart; regenerate with irregular timestamps in `scripts/construct-fixtures.mjs`. Moves the
+  expected reports, so it lands with the next refreeze.
+- E6: question 4 "every item links to its prompt" is a constant, not a count; make it a check.

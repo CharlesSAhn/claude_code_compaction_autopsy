@@ -18,16 +18,19 @@ view state. An investigation tool, not a dashboard. Only fields the contract def
 - At load, `analyze` runs on every fixture once. The results feed the session source's
   matched-action verdicts, so the default is the contract's rule: the highest-provenance
   session with a downstream action (observed, then experiment-derived, then constructed). The
-  ticket case lands first. Its compaction is in view with a "Start here" hint on the ledger's
-  first row; the hint disappears on the first selection.
+  ticket case lands first. Its compaction is in view with a one-line "Start here: click the
+  compaction." button above the questions; clicking it selects the compaction and scrolls its
+  timeline bar into view. The hint disappears on the first item selection or session change.
+  (Ruled 2026-09-17; it was a chip on the ledger's first row.)
 - URL query string, read on load and written on every change, no routing:
   `?session=<id>&compaction=<index>&item=<item id>&view=ledger|story|evidence`. A missing or
   unknown value falls back to the default; the URL never carries anything not derivable from
   the fixtures.
 - Every session shows its provenance band: the kind in capitals, then `run` for
   experiment-derived or the `note` verbatim for constructed. Never smaller than body text.
-- One-line footer on every view: "Demo data is illustrative. Items are pre-labeled; survival,
-  downstream, and restatement are computed in the browser."
+- One-line footer on every view: "Demo data is illustrative. Items are pre-labeled; the README
+  says what the analysis does and doesn't do." followed by a link to the README. (Ruled
+  2026-09-17.)
 - Facts line under the picker: `claudeCodeVersion` · `model` · `trigger` ·
   `preTokens → postTokens` (absent postTokens: "after: not recorded") · boundary `ts`.
 
@@ -61,7 +64,8 @@ of the selected item.
 
 Ledger: one row per `ItemReport`: item text and class tag; status word with `verbatim` when
 true; score to two decimals; origin line; after column with "MATCHED · tool · time",
-"NONE FOUND · N scanned", or "NOT CHECKABLE". Clicking a row selects it and writes `item=` to
+"NONE FOUND · N tool calls after", or "NOT CHECKABLE". The count is what the UI can count, tool
+calls after the compaction; a scanned count from the analyzer is a v3 contract candidate. Clicking a row selects it and writes `item=` to
 the URL.
 
 Trace of the selected item, four steps, always all four:
@@ -74,7 +78,7 @@ Trace of the selected item, four steps, always all four:
 3. **After**: the downstream result.
    - `matched`: `INCONSISTENT_LABEL` (rendered from the constant), then tool, time, matcher,
      artifact, excerpt, and "before restatement" or "after restatement".
-   - `none_found`: "none found: N in-scope actions scanned" and what closed the window:
+   - `none_found`: "none found: N tool calls after the compaction, none matched" and what closed the window:
      "until the end of the session" or "until the next compaction at <ts>"; the scope kinds.
    - `none_matchable`: "not checkable" with the reason: "a fact has no anchor", "a positive
      rule has no anchor", or "no concrete or class anchor in the trigger clause"; scope empty.
@@ -152,7 +156,7 @@ to a row and flash it. Long sessions scroll inside the region, not the page.
 
 ## States that must look right
 
-- Healthy case: four PRESERVED rows, three "NONE FOUND · N scanned", one "NOT CHECKABLE",
+- Healthy case: four PRESERVED rows, three "NONE FOUND · N tool calls after", one "NOT CHECKABLE",
   four closing lines, `HEALTHY_LINE` under question 5, four clean crossings. A finished
   result, not an empty screen.
 - Constructed sessions: the band says CONSTRUCTED with the note; nothing else differs.

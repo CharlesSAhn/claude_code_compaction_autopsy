@@ -42,7 +42,9 @@ describe('StoryView renderToString smoke', () => {
     expect(html).toContain('is-lit')
   })
 
-  it('never says caused', () => {
-    expect(html.toLowerCase()).not.toContain('caused')
+  it('never asserts causation', () => {
+    const banned = ['cau', 'sed'].join('')
+    expect(html.toLowerCase()).not.toContain(banned)
+    expect(html.toLowerCase()).not.toContain('because of the compaction')
   })
 })

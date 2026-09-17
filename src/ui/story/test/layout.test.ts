@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { layoutStory, regionOf, shortText } from './layout'
-import { STUB_COMPACTION, STUB_REPORT } from './test/stub-report'
+import { layoutStory, regionOf, shortText } from '../layout'
+import { STUB_COMPACTION, STUB_REPORT } from './stub-report'
 
 const SIZE = { width: 800 }
 

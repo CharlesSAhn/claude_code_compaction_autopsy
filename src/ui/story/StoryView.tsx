@@ -174,8 +174,8 @@ export function StoryView({
   const layout = layoutStory(report, { width }, compaction)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [bandHover, setBandHover] = useState(false)
-  /** 0 = not playing; 1..4 = the act currently shown. */
-  const [act, setAct] = useState(0)
+  /** 0 = not playing; 1..4 = the act currently shown. Keyed by report so a new report resets to the end state. */
+  const [play, setPlay] = useState<{ key: string; act: number }>({ key: '', act: 0 })
   const clipId = useId()
   const clipRef = useRef<SVGRectElement>(null)
   const afterRef = useRef<SVGGElement>(null)
@@ -190,13 +190,13 @@ export function StoryView({
   const isDim = (id: string) => activeId !== null && activeId !== id
 
   const { band } = layout
+  const reportKey = `${report.sessionId}:${report.compactionIndex}`
+  const act = play.key === reportKey ? play.act : 0
   const playing = act > 0
   // What each act shows. Server render and reduced motion draw these end states directly.
   const clipTarget = act === 1 ? band.x : layout.width
   const showStatus = !playing || act >= 2
   const showAfter = !playing || act >= 3
-  const reportKey = `${report.sessionId}:${report.compactionIndex}`
-
   // Interactions 3 and 5: transitions run on the rendered nodes, never in the layout.
   useEffect(() => {
     const clip = clipRef.current
@@ -230,14 +230,9 @@ export function StoryView({
     }
   }, [reportKey, act, motion, clipTarget, showAfter, layout.width, band.x])
 
-  // A new report resets the story to its end state.
-  useEffect(() => {
-    setAct(0)
-  }, [reportKey])
-
   const playStep = () => {
     const next = act >= ACTS.length ? 0 : act + 1
-    setAct(next)
+    setPlay({ key: reportKey, act: next })
     if (next > 0) onPlayStep?.(ACTS[next - 1])
   }
   const playLabel = act === 0 ? 'Play story' : act >= ACTS.length ? 'Show all' : `Next: ${ACTS[act]}`

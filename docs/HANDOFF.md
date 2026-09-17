@@ -1,16 +1,18 @@
-# HANDOFF — 2026-09-16, end of project-session2 (T1-fixtures, freeze v1, T2-stub, task graph, UI spec)
+# HANDOFF — 2026-09-17, end of project-session3 (three lanes merged, reviews, fixes, freeze v2, closes)
 
 The next session starts from this file and nothing else. Repo rules are in `CLAUDE.md`
 (auto-loaded). Time log is `STATUS.md`. Skills: `/task-close`, `/independent-review`,
-`/session-handoff`, `/freeze-contract` (human-run).
+`/session-handoff`, `/freeze-contract` (human-run). Deferred work is in `docs/tasks/BACKLOG.md`.
 
-**The contract is frozen at v1** (`8522efa`). `docs/contracts/FROZEN` holds the hashes of
-`docs/contracts/contract.md` and `src/domain/contract.ts`; `src/domain/contract.frozen.test.ts`
-checks them in `npm run check`; the guard hook blocks writes under `docs/contracts/` and to the
-types file, and also blocks any command line that names those paths next to a write pattern,
-so keep frozen paths out of commands that redirect or `git add`. A change is a refreeze: the
-human deletes FROZEN, Claude edits and logs in `docs/CONTRACT-ISSUES.md`, the human runs
-`/freeze-contract` for v2.
+**The contract is frozen at v2** (`2ff97d1`). Two changes from v1, logged in
+`docs/CONTRACT-ISSUES.md`: a downstream forbidden-token match is whole-token, the same rule as
+survival (`VLX-41271` is not `VLX-4127`); regions are half-open windows both ways (a message at
+exactly a boundary's `ts` is after that boundary). The guard hook blocks writes under
+`docs/contracts/` and to the types file while FROZEN exists, and blocks any command line that
+names those paths next to a write pattern (`>`, `2>&1`, `sed`, `python3`, `node`, `awk`, `rm`,
+`mv`, …). Reads with `head`, `tail`, `grep`, `cat` alone pass. A refreeze: the human deletes
+FROZEN and that deletion is committed alone (the freeze skill's precondition treats it as an
+uncommitted contract edit otherwise), Claude edits and logs, the human runs `/freeze-contract`.
 
 ## Done
 
@@ -18,124 +20,110 @@ human deletes FROZEN, Claude edits and logs in `docs/CONTRACT-ISSUES.md`, the hu
 |---|---|---|
 | scaffold | 9d99739 | Vite + React + TS scaffold |
 | guards | 22199d4 | hooks, egress deny, contract guard, usage-time script |
-| (unclosed commits) | 8899ae4 … fad2ab5 | skills, experiments, algorithm v1, plan, contract v1, review |
-| T1-fixtures | 801e5c7 (+ c810486 STATUS) | three fixtures, reference script aligned to the reviewed contract, expected tests from `--report-json`, rulings A and B, default-demo rule, task-close step 2 wording; contract push-back in 4dbfbb4, freeze v1 in 8522efa |
-| T2-stub-and-strategy | e42b11d (+ 608003b STATUS) | `analyze` stub throwing "not implemented", pending tests import it statically, `docs/specs/testing-strategy.md`, `sourceSessionId` logged as v2 candidate |
+| T1-fixtures | 801e5c7 | three fixtures, reference script, expected tests, freeze v1 |
+| T2-stub-and-strategy | e42b11d | `analyze` stub, pending tests, testing strategy |
+| T2-engine | 8f53285 (lane merge) | `analyze` stages 1–5 ported from the reference; 16 expected tests moved out of `pending/` and green; parity test against committed reference JSON; extraction parity; unit tests for every listed sentence and negative case; two-boundary test |
+| T3-ui-shell | 26fcfb2 (lane merge) | shell, header with picker, provenance band, facts line, slots, timeline with the boundary bar, footer, url-state, light and dark tokens, smoke tests |
+| T6-story-view | 3fd6f64 (lane merge) | pure `layoutStory`, `StoryView` SVG, interactions 1–5, D3 modules installed per the table, stub report under test |
 
-Pushed to origin through 608003b. This handoff commit and the task graph are local until the
-human pushes.
+The three lanes ran as parallel subagents in worktrees under a 35-minute cap and all finished
+inside it with everything committed. After the merge: `src/source.ts` runs `analyze` on every
+fixture at load and builds the session source with the real matched-action verdicts
+(`d466d24`); the temporary `src/ui/stub-analyze.ts` is deleted; architecture rule R5 (no file
+under `src/ui`, tests included, imports from `src/fixtures`) is in `src/specs/architecture.test.ts`
+and `CLAUDE.md`.
+
+Three independent reviews (T2, T3, T6) produced twelve correctness findings. Fixed, each in its
+own commit: the import scanner missed multi-line imports (`baa9387`); region edge in engine and
+timeline (`eec4b19`); Bash write through a longer path (`2f035f6`); story link from a stopped
+ribbon, stem to a restatement past the band, tool label kept inside the drawing (`ab047f9`);
+the four CSS tokens the story reads (`54f13cc`); `compaction=` and `item=` bounded by the
+resolved session (`c511220`); whole-token downstream match under contract v2 (`41d4552`). Logged
+to `docs/tasks/BACKLOG.md`: the two weak tests and the style findings, the story's aria role as
+its own line.
+
+The close of the three tasks is the STATUS commit right after `41d4552`; rows carry each lane's
+merge commit. Pushed to origin through 608003b before this session; everything from 95204fe on
+is local until the human pushes at this session's gate.
 
 ## Next
 
-Three lanes in parallel, each in its own session, opened by its task file; then T4, T7, T5, T8
-in order (`docs/tasks/*.md`, graph in this file under Decisions). `docs/specs/ui.md` is the
-spec all three UI lanes build to.
+**T4-autopsy** (`docs/tasks/T4-autopsy.md`, spec `docs/specs/ui.md`, "Autopsy panel" and
+"Evidence drawer"). First concrete step: `src/ui/autopsy/strings.ts` with `HEALTHY_LINE`, then
+`AutopsyPanel` mounted into `AutopsySlot` from `src/App.tsx`, reading the report for the selected
+session and compaction from `analyzedSessions` in `src/source.ts`. Then mount `StoryView` into
+`StorySlot` with the real report and `compaction={session.compactions[report.compactionIndex]}`
+(the story's band label and token facts come from that prop). Read the "For T4-autopsy" section
+of `docs/tasks/BACKLOG.md` first: token names are already aliased, the timeline exposes
+`highlightUuid` and `id="msg-<uuid>"` rows, the shell's `App` takes `source` and
+`initialSearch`. Then T7-qa, T5-ship, T8-polish in order.
 
-- **T2-engine**: first step is `src/domain/normalize.ts` and `survival.ts` against
-  `docs/specs/algorithm-v1.md` stage 2, run `npm run test:pending` after each stage until the
-  sixteen tests pass, then `git mv` them out of `pending/`, then the parity test against
-  `scripts/autopsy-check.py --fixture … --report-json` output committed under
-  `src/specs/parity/`.
-- **T3-ui-shell**: first step is `src/ui/app/url-state.ts` and the `App` frame with `Header`,
-  the provenance band, the footer, `AutopsySlot`, `StorySlot`, `Timeline`; renders from
-  `Session` alone, never imports `analyze`.
-- **T6-story-view**: first step is loading the `dataviz` skill, then `src/ui/story/layout.ts`
-  (pure, tested) against `src/ui/story/test/stub-report.ts`, then the React SVG, then
-  installing the D3 modules named in `docs/tasks/T6-story-view.md`.
+## Decisions, verbatim, 2026-09-16 and 2026-09-17
 
-Layout is chosen (option C with the evidence drawer); `docs/specs/ui.md` is written; the
-lanes may start.
+Lane brief: "Cap: 35 minutes from when the lanes start. Must-haves: T2 tests pass, T3 renders
+all three fixtures, T6 interactions 1 and 2. In every lane's brief: must-haves first, commit each
+the moment it's green." "What's committed is what we keep, so never sit on green work." "If the
+pre-commit hook rejects a lane's commit, the lane reports the message and leaves the work
+uncommitted. No `--no-verify`. Nobody touches the hooks."
 
-## Decisions, verbatim, 2026-09-16
+T3 stub: "Until T2 lands, the analysis result comes from one stub file, `src/ui/stub-analyze.ts`,
+that returns the fixtures' expected answers. Nothing else in `src/ui` imports from
+`src/fixtures`. The stub is temporary; the integrator deletes it after the merge."
 
-The brief for the fixture task: "Don't build the analyzer yet. This task is the demo data and
-the answers we expect from it. The contract is reviewed, not frozen. This task is its first real
-consumer. The freeze comes at the end of it."
+Merge and swap: "wire the shell to the real `analyze` from `src/domain/index.ts`, delete
+`src/ui/stub-analyze.ts`, add an architecture-test rule that `src/ui` never imports from
+`src/fixtures`."
 
-Storyboard approval: "Both after-boundary changes: yes. The human prompt stays neutral in each
-so the violation is Claude's choice, not mine."
+Review fixes: "Fix 1 through 8 and 10. Order: 1 first, then 7 and 10 together, then 8 including
+the reference script and regenerated parity JSON, then 2, 3, 4, 5, 6. For 5, add the four
+tokens to the shell's CSS rather than renaming in the story."
 
-Ruling A: "Anchor gone from the summary means LOST, stray words don't rescue it. Also: entities
-match as whole tokens in survival scoring, same as downstream. rotate_keys.py is not a partial
-match for rotate_keys.sh; that stem match is where the 0.20 came from."
+Contract v2: "9 is a contract change. Downstream anchor matching goes whole-token, same as
+survival." On the region edge: "agreed, half-open both ways, and the v2 doc says so."
 
-Ruling B: "yes, drop "stop" in v1."
+Status gating: "leave v1 as is. Log in CONTRACT-ISSUES.md as a v2 question: a downstream hit on
+a PRESERVED item should carry a different, weaker label than the inconsistency label, because
+that's a model ignoring a present rule, not compaction loss." Not bundled into the refreeze.
 
-Task-close contract check: "The contract check is shasum -c against FROZEN. Before FROZEN
-exists, task-close reports the contract diff and doesn't fail on it; the contract is allowed to
-move before the freeze. T1 freezes before it closes, so the check passes. Fix the skill to say
-that."
+Close ruling 1: "Steps 1 through 4 run as checks, three STATUS rows with each lane's merge commit
+as its SHA, STATUS.md committed alone as the close. Write that into the task-close skill: when
+work was committed at milestones and the tree is clean, that's the close, not a refusal."
 
-Default demo: "Default demo is the ticket case, not healthy. The rule is the highest-provenance
-session that has a downstream action, and healthy has none."
+Close ruling 2: "widen, and make it permanent. The architecture test, the source wiring,
+BACKLOG.md, CONTRACT-ISSUES.md, CLAUDE.md, and tsconfig belong to the integrator and never
+count as outside ownership at a lane close." Widened again: "The integrator set also includes
+docs/HANDOFF.md, docs/specs/*, docs/tasks/*, .claude/skills/*, and any contract, spec, or
+reference-script change from a refreeze I directed."
 
-Fuzzy distance 2 → 1 was Claude's push-back (ticket matched picked, option matched portion,
-the flagship demo scored a log line above the work-item line); the human froze the contract
-with it in.
+Literal scan: "The .skip( and .only( scan covers test files and src/ only. Docs are prose. And it
+distinguishes skipIf with a reason from a bare skip; only the bare ones fail."
 
-Source session id: "no refreeze. run: "run2" is the source references for v1; the derivation
-table in the task file says which scratch run that is and that's enough to find it. log
-sourceSessionId in CONTRACT-ISSUES.md as a v2 candidate for the real-data adapter."
+Time attribution for parallel lanes: "13 per row, 39 added to the running total once."
 
-Task graph: "ok on the graph and the names. I'll use T2-engine, T3-ui-shell, T6-story-view,
-T4-autopsy, T7-qa, T5-ship, T8-polish from here on. T2 rendering from the session alone: yes
-and no stub. T6 against a hand-made stub report:yes test data only, nothing at runtime imports
-it once T4 wires the real one. Layout choice stays before the lane, not in T4. T3 and T6 both
-build against it, so it has to exist first." Graph: T2, T3, T6 in parallel → T4 → T7 → T5 →
-T8. No adapter task: "that got built with the fixtures."
-
-Lane rules: "they run in parallel. Nobody changes what the contract terms mean. If a lane
-thinks the contract is wrong, it writes it in `docs/CONTRACT-ISSUES.md` and keeps going."
-
-UI, from the options brief: "one screen, no routing"; "it's an investigation tool, not a
-dashboard"; "it shows only the fields the contract defines, and the optional ones have explicit
-states: "not checkable" and "none found" are the normal case and have to look right, not
-empty"; "the center answers the five questions in order: what was there, what survived, what
-was lost or weakened, where it came from, what happened after. The summary with the matched
-span marked is the evidence view you open from an item, not the centerpiece."
-
-UI, from the spec brief: "analyze runs on every fixture at load, then the default is chosen:
-the highest-provenance session with a downstream action, compaction in view, with the "Start
-here" hint. URL query string holds session, compaction, item, view." "One-line footer on every
-view: demo data is illustrative, items are pre-labeled." "Per item, a four-step trace: source,
-compaction with the closest passage and its score, after, evidence." "The two empty states are
-shown, never blank: "not checkable" with its reason, "none found" with how many in-scope
-actions were scanned and what closed the window." "Healthy closing line: "No downstream action
-inconsistent with tracked information was observed."" "D3 does the math in a pure tested layout
-module. React renders the SVG. D3 only under `src/ui/story/`." "The link to the first
-inconsistent action is dashed, never a solid arrow, labeled with the contract's fixed phrase.
-No caption says "caused". Status by label and line style, not color alone. Respect reduced
-motion. Load the `dataviz` skill before any chart code."
-
-T6 packages: "its task file names the D3 modules it needs, individuals packages, not the
-unbrella. the lane installs theme."
-
-T7 ownership: "T7 owns `README.md`, `docs/deployment.md`, `scripts/deploy-s3.sh`."
+Playbook: "I'll note both the refreeze pattern and the status-gating question in the playbook so
+they carry forward."
 
 ## Open questions
 
 - `AUTOPSY_BUCKET` and region for T5-ship; the human lifts the `aws` deny for the sync and
   `curl` for T8.
 - Whether the D3 module table in T6 grows (any addition is written into the table first).
-- Two literal `.skip(` hits in the skill markdown trip task-close's scan while the guards
-  commit is the base; the human waved it through for T1 and T2 closes. Now that base moves
-  with each close, it no longer fires.
+- v3 candidates in `docs/CONTRACT-ISSUES.md`: `sourceSessionId` on `Provenance`; a weaker label
+  for a downstream hit on a PRESERVED item.
+- The freeze skill's step 0 treats the human's deletion of FROZEN as an uncommitted contract
+  edit. Either commit the deletion alone before running it (done this session) or exclude
+  FROZEN from that check in the skill.
+- Item ids for real-data sessions: `initialUrlState` keeps `item=` only when the session carries
+  pre-labeled items; T4 should feed the analyzed ids instead.
 
 ## Uncommitted
 
-Before this handoff commit:
-
-```
- M STATUS.md
-?? docs/specs/ui.md
-?? docs/tasks/T2-engine.md  T3-ui-shell.md  T4-autopsy.md  T5-ship.md  T6-story-view.md  T7-qa.md  T8-polish.md
-```
-
-All docs; committed by this handoff as `docs: task graph, UI spec, handoff`. No code pending.
+clean (this handoff is the last docs commit of the session).
 
 ## Time
 
-2h 26m of the 4–5h target (`node scripts/usage-time.mjs`, 137 turns). Closed rows: scaffold 4,
-guards 13, T1-fixtures 16, T2-stub-and-strategy 3; running total 36 minutes. The rest of the
-usage sits in unclosed stretches (skills, experiments, algorithm, plan, contract, review, this
-session's graph and spec).
+3h 08m of the 4–5h target (`node scripts/usage-time.mjs`, 151 turns). Closed rows: scaffold 4,
+guards 13, T1-fixtures 16, T2-stub-and-strategy 3, T2-engine 13, T3-ui-shell 13, T6-story-view
+13; running total 75 minutes. The three lane rows share one 39-minute window (parallel lanes
+plus integration), split evenly by ruling. The rest of the usage sits in unclosed stretches
+(skills, experiments, algorithm, plan, contract, reviews, this session's merge and fixes).

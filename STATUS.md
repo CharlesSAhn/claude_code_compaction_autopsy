@@ -11,9 +11,9 @@ Time spent waiting on a question is excluded. Running total sums closed rows.
 | guards   | closed | 22199d4 | 2026-09-16T13:28:26Z | 2026-09-16T14:05:35Z | 13      | 17            |
 | T1-fixtures | closed | 801e5c7 | 2026-09-16T21:59:17Z | 2026-09-16T22:32:08Z | 16      | 33            |
 | T2-stub-and-strategy | closed | e42b11d | 2026-09-16T22:40:00Z | 2026-09-16T23:15:04Z | 3       | 36            |
-| T2-engine | open | | | | | |
-| T3-ui-shell | open | | | | | |
-| T6-story-view | open | | | | | |
+| T2-engine | closed | 8f53285 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 49 |
+| T3-ui-shell | closed | 26fcfb2 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 62 |
+| T6-story-view | closed | 3fd6f64 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 75 |
 | T4-autopsy | open | | | | | |
 | T7-qa | open | | | | | |
 | T5-ship | open | | | | | |

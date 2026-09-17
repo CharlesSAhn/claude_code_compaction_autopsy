@@ -20,6 +20,12 @@
   --prov-constructed: #7a4a1e;
   --accent: #b3261e;
   --boundary: #1c1c1a;
+
+  /* Names the story view reads (src/ui/story). Aliases resolved on :root, so the dark blocks apply. */
+  --accent-action: var(--accent);
+  --band: var(--boundary);
+  --surface: var(--bg-elevated);
+  --text-muted: var(--fg-muted);
 }
 
 @media (prefers-color-scheme: dark) {

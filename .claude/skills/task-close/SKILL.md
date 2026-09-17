@@ -14,7 +14,12 @@ task files in `docs/tasks/<task>.md`.
 ## 0. Preconditions
 - For each task id, `docs/tasks/<task>.md` must exist. If any is missing, print the
   missing ids and refuse the whole close.
-- `git status --porcelain` must show changes. Nothing to close otherwise.
+- `git status --porcelain` normally shows the changes this close commits (step 5). When it is
+  empty and the work was committed at milestones (`git log $BASE..HEAD` is non-empty), that is
+  the close, not a refusal: steps 1 through 4 run as checks over `git diff $BASE`, step 5
+  commits nothing per task, and each STATUS.md row's SHA is the commit that landed the task
+  (its merge commit when the task ran in a lane). STATUS.md is then committed alone as
+  `<task>[, <task>…]: close, STATUS rows`. Ruled 2026-09-16.
 - Read `STATUS.md`: the SHA of the last row with status `closed` is `$BASE`. If there is no
   closed row, `$BASE` is the first commit. All diffs below are `git diff $BASE`.
 
@@ -53,6 +58,10 @@ command output, a test name, or a `file:line`. Any FAIL stops the close.
 - Union the `## Files owned` of every task in this close. List every changed file outside the
   union under `Outside owned files:` and stop. The human decides whether to widen ownership
   or revert. `STATUS.md` is always owned.
+- Integrator files never count as outside ownership at a lane close (ruled 2026-09-16):
+  `src/specs/architecture.test.ts`, the source wiring (`src/source.ts` and its mount in
+  `src/App.tsx`), `docs/tasks/BACKLOG.md`, `docs/CONTRACT-ISSUES.md`, `CLAUDE.md`, and
+  `tsconfig*.json`.
 
 ## 5. Commit
 One commit per task, in the order given: `git add` only that task's owned files, then

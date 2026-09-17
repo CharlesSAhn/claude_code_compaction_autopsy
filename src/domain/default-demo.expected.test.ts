@@ -5,10 +5,10 @@
  * Red until analyze is implemented (today it throws "not implemented").
  */
 import { describe, expect, it } from 'vitest'
-import type { Session } from '../contract'
-import { analyze } from '../index'
-import { fixtures } from '../../fixtures/index.ts'
-import { fromSessions } from '../../adapters/session-source.ts'
+import type { Session } from './contract'
+import { analyze } from './index'
+import { fixtures } from '../fixtures/index.ts'
+import { fromSessions } from '../adapters/session-source.ts'
 
 describe('default demo', () => {
   it('is the ticket case once analyze supplies the downstream verdicts', () => {

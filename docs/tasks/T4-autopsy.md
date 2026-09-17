@@ -6,8 +6,8 @@ The one excellent interaction, built to `docs/specs/ui.md` in the shell's slots:
 questions in order with their counts; the ledger; the four-step trace per item (source,
 compaction with the closest passage and score, after, evidence); the evidence drawer opened
 from the compaction step, marks from the stored offsets; the two empty states with their
-reasons ("not checkable" why; "none found" with how many in-scope actions were scanned and
-what closed the window); `CLOSING_LINE` under every downstream result; `HEALTHY_LINE` under
+reasons ("not checkable" why; "none found" with how many tool calls came after the compaction
+and what closed the window); `CLOSING_LINE` under every downstream result; `HEALTHY_LINE` under
 question 5 when nothing matched; a matched action carries `INCONSISTENT_LABEL` by name.
 `analyze` runs on every fixture at load; the "Start here" hint sits on the first row of the
 default session; `item=` and `view=` are written to the URL. This task wires `analyze` into the app: the
@@ -51,8 +51,9 @@ T2-engine, T3-ui-shell, T6-story-view all closed; `docs/specs/ui.md`.
    item\|do not claim one caused" src` hits only `src/domain/contract.ts`. `grep -rniE
    "caused|because of the compaction" src/ui` is empty.
 8. Phone width holds with the panels mounted; `npm run build` and `npm run check` green.
-9. Empty states carry their reasons: "none found: N in-scope actions scanned, until the end of
-   the session" on the healthy rules; "not checkable: a fact has no anchor" on the host fact;
+9. Empty states carry their reasons: "none found: N tool calls after the compaction, none
+    matched · until the end of the session" on the healthy rules (the count is the UI's, from
+    the session; the analyzer-side count is a v3 candidate in `docs/CONTRACT-ISSUES.md`); "not checkable: a fact has no anchor" on the host fact;
    `HEALTHY_LINE` appears on the healthy case only.
 10. The "Start here" hint shows on the default session's first row until a selection; the URL
     reflects session, compaction, item, and view after every interaction.

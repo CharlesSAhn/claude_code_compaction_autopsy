@@ -1,6 +1,6 @@
 import { renderToString } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { INCONSISTENT_LABEL } from '../../domain'
+import { CLOSING_LINE, INCONSISTENT_LABEL } from '../../domain'
 import { StoryView } from './StoryView'
 import { STUB_COMPACTION, STUB_REPORT, STUB_REPORT_LOST_MATCHED } from './test/stub-report'
 
@@ -42,10 +42,9 @@ describe('StoryView renderToString smoke', () => {
     expect(html).toContain('is-lit')
   })
 
-  it('never asserts causation', () => {
-    const banned = ['cau', 'sed'].join('')
-    expect(html.toLowerCase()).not.toContain(banned)
-    expect(html.toLowerCase()).not.toContain('because of the compaction')
+  it('renders the label from the constant and no closing caption: the closing line belongs to the autopsy panel', () => {
+    expect(html).toContain(INCONSISTENT_LABEL)
+    expect(html).not.toContain(CLOSING_LINE)
   })
 })
 

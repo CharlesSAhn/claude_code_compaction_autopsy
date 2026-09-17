@@ -30,3 +30,10 @@ Log of every change to the frozen contract. One entry per refreeze: date, versio
   on. v2 question: a downstream hit on a PRESERVED item should carry a different, weaker label
   than the inconsistency label, because that is a model ignoring a rule that is present, not
   compaction loss. Not bundled into the v2 refreeze; it would ripple into the storyboards.
+- 2026-09-16, the none-found state carries its own facts: `DownstreamEvidence` for
+  `none_found` should carry how many tool calls the matcher walked (a scanned count) and what
+  closed the window (end of session, or the next boundary's `ts`), from the analyzer. v1 carries
+  `result` and `scope` only, so the UI recomputes the window from the session and counts tool
+  calls in it, which is not the per-item in-scope count the spec wording asked for. Ruled
+  2026-09-16 (T4-autopsy): no refreeze now; the UI words the count as what it counts, "N tool
+  calls after the compaction, none matched", with the window end beside it.

@@ -47,7 +47,7 @@ export function Header({ refs, session, compactionIndex, onSelectSession }: Head
           >
             {refs.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.label}
+                {`${r.label} · ${r.provenance.kind.toUpperCase()}`}
               </option>
             ))}
           </select>

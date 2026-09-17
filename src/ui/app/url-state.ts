@@ -3,6 +3,7 @@
  * on every change, no routing. A missing or unknown value falls back to the default.
  */
 import type { SessionSource } from '../../adapters/session-source.ts'
+import type { Session } from '../../domain'
 
 export type View = 'ledger' | 'story' | 'evidence'
 
@@ -72,15 +73,21 @@ export function currentSearch(): string {
 /**
  * The state for a query string over a source: the session is resolved first, then `compaction=`
  * and `item=` are bounded by that session, so nothing the URL cannot derive from it survives.
+ * `itemIdsOf` names the session's item ids; the shell passes the analyzed ids, so a session
+ * without pre-labeled items still keeps `item=`.
  */
-export function initialUrlState(source: SessionSource, search: string): UrlState {
+export function initialUrlState(
+  source: SessionSource,
+  search: string,
+  itemIdsOf: (session: Session) => readonly string[] = (s) => s.items?.map((i) => i.id) ?? [],
+): UrlState {
   const base: UrlDefaults = { sessionIds: source.list().map((r) => r.id), defaultSession: source.defaultId() }
   const first = parseUrlState(search, base)
   const session = first.session !== undefined ? source.get(first.session) : undefined
   return parseUrlState(search, {
     ...base,
     compactionCount: session?.compactions.length ?? 0,
-    itemIds: session?.items?.map((i) => i.id) ?? [],
+    itemIds: session === undefined ? [] : itemIdsOf(session),
   })
 }
 

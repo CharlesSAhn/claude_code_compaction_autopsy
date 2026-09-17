@@ -29,7 +29,9 @@ task files in `docs/tasks/<task>.md`.
 - If `git diff --stat $BASE -- src/ui` is non-empty, run `npm run build` and paste the vite
   summary lines.
 - Test integrity, over `git diff $BASE`:
-  - FAIL if any added line contains `.only(` or `.skip(`. Literal match, so `it.skipIf(` passes.
+  - Over added lines in test files (`*.test.ts`, `*.test.tsx`) and under `src/` only; docs are
+    prose and are never scanned. FAIL on a bare `.only(` or `.skip(`. `skipIf(<condition>)`
+    with its reason is not a skip and passes. Ruled 2026-09-16.
   - FAIL if any file under `src/specs/`, any `*.test.ts` or `*.test.tsx`, or any file under
     `src/fixtures/` has more deletions than insertions in `git diff --numstat $BASE`, unless
     `git diff -M --name-status $BASE` shows it as a rename (`R`). A rename moves lines, it does
@@ -60,8 +62,11 @@ command output, a test name, or a `file:line`. Any FAIL stops the close.
   or revert. `STATUS.md` is always owned.
 - Integrator files never count as outside ownership at a lane close (ruled 2026-09-16):
   `src/specs/architecture.test.ts`, the source wiring (`src/source.ts` and its mount in
-  `src/App.tsx`), `docs/tasks/BACKLOG.md`, `docs/CONTRACT-ISSUES.md`, `CLAUDE.md`, and
-  `tsconfig*.json`.
+  `src/App.tsx`), `docs/tasks/BACKLOG.md`, `docs/CONTRACT-ISSUES.md`, `CLAUDE.md`,
+  `tsconfig*.json`, `docs/HANDOFF.md`, `docs/specs/*`, `docs/tasks/*`, `.claude/skills/*`, and
+  any contract, spec, or reference-script change (`docs/contracts/*`, `src/domain/contract.ts`,
+  `docs/specs/*`, `scripts/autopsy-check.py`) from a refreeze the human directed. These are
+  never lane files.
 
 ## 5. Commit
 One commit per task, in the order given: `git add` only that task's owned files, then

@@ -68,6 +68,29 @@ units). No Python at test time: the reference output is committed JSON.
 Anything under `src/ui`; the default-demo predicate wiring (T4-autopsy); the reference script's
 CLI; new fixtures; subagent transcripts; microcompact boundaries.
 
+## Parity reference
+
+`src/specs/parity/<id>.report.json` is the output of one command per fixture, committed:
+
+    python3 scripts/autopsy-check.py --fixture src/fixtures/<id>.json --report-json > src/specs/parity/<id>.report.json
+
+`src/specs/parity.test.ts` deep-equals `analyze(fixture).reports[0]` to it (scores at four
+decimals) and re-derives the items with `items` stripped.
+
+## Findings (2026-09-16, engine lane)
+
+- The reference builds `CLASS_RES` as a dict over `ENT_RES`, so for a `path` class anchor it
+  keeps only the second path alternative (`(src|scripts|docs|config|logs)/…`), not the contract's
+  full `PATTERNS.path`. The engine uses the contract pattern. No fixture carries a path class
+  anchor, so the parity test cannot expose it; the reference is left as is and this is logged
+  for the backlog (a class-anchor case would settle it).
+- Regions with more than one boundary: before compaction `i` is `ts < compactions[i].ts` and
+  `ts > compactions[i-1].ts`; after is `ts > compactions[i].ts` and `ts < compactions[i+1].ts`.
+  The reference handles the first boundary only; `src/domain/analyze.test.ts` covers two.
+
 ## Requests
 
-(none yet)
+- `tsconfig.node.json` still lists `vitest.pending.config.ts` in `include` (file deleted here;
+  `tsc -b` passes). Owner of the root configs: drop it.
+- `src/specs/fixtures.test.ts` header comment says expected results live in `src/domain/pending`;
+  they are now `src/domain/*.expected.test.ts`. Comment only.

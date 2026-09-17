@@ -84,3 +84,20 @@ integrator from the lane reports on 2026-09-16 (T2-engine, T3-ui-shell, T6-story
   (same constant as the reference).
 - Lexical timestamp comparison (contract, "Regions") assumes one ISO format; the adapter emits
   millisecond precision. A fixtures test asserting uniform `ts` format would make that explicit.
+
+## From the QA review, 2026-09-17 (`docs/reviews/2026-09-17-qa.md`)
+
+- Finding 10: `afterRestatement` uses strict `ts > restatedTs`; a hit and a restatement in the
+  same millisecond read "before restatement". Message `line` is available for a tiebreak.
+- Finding 11: `verbatim` is a raw substring test, so "today" inside "today.bak" still counts.
+- Finding 12: the `bash_write` excerpt is cut around the first occurrence of the anchor in the
+  whole command, not in the segment that hit.
+- S3: items dedupe by normalized text, so "Don't edit X." and "Do not edit X." are two rows that
+  hit the same action twice.
+- S4: the heredoc regex and `stripLiterals` duplicate the literal grammar.
+- S5: `src/ui/autopsy/derive.ts` re-implements the domain's mark merging; exporting the domain's
+  `markedSpan` merge through `src/domain/index.ts` would remove the copy.
+- Reference script: `scripts/autopsy-check.py` keeps the old behavior on the four fixed edges
+  (path directory prefix, quoted redirect target, heading whole words, changelog casing). Align
+  it with the next refreeze; the fixtures do not exercise those edges, so parity is unchanged.
+

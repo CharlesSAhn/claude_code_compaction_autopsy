@@ -53,4 +53,13 @@ Running the deploy; the evaluator pass (T8); new features from the backlog.
 
 ## Fixes
 
-(filled at close)
+Review log: `docs/reviews/2026-09-17-qa.md`. One line per file, with the finding number.
+
+- `src/domain/normalize.ts` — finding 1, a path followed by `/` is a directory prefix, not the path.
+- `src/domain/wordlists.ts` — finding 8, heading words as whole words (singular or plural); finding 16b, changelog filename case-insensitive.
+- `src/domain/actions.ts` — finding 16a, a quoted redirect target is a write.
+- `src/domain/qa-2026-09-17.test.ts` — regression tests for 1, 8, 16a, 16b.
+- `src/ui/autopsy/After.tsx` — finding 13, the order row only when something was restated.
+- `src/ui/autopsy/AutopsyPanel.tsx` — S1, the ledger cell reads `INCONSISTENT ACTION · tool · time`.
+- `src/ui/autopsy/AutopsyPanel.test.tsx` — tests for 13 and S1.
+- `src/ui/story/StoryView.tsx` — S2, the story's empty line says "none found".

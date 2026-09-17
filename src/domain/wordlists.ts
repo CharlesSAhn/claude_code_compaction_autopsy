@@ -34,7 +34,8 @@ export const CLASS_RES: Record<EntityKind, RegExp> = {
 
 export const STOP = new Set<string>(WORDS.stopwords)
 export const HEADING = new RegExp(PATTERNS.heading)
-export const HEAD_WORDS = new RegExp(WORDS.structuralHeadings.join('|'), 'i')
+/** Whole words, singular or plural like the scope nouns (QA 2026-09-17 finding 8: "Outstanding" is not "standing"). */
+export const HEAD_WORDS = new RegExp(String.raw`\b(?:` + WORDS.structuralHeadings.join('|') + String.raw`)s?\b`, 'i')
 export const FILE_TOOLS = new Set<string>(WORDS.fileTools)
 export const MCP_READ_VERBS = new Set<string>(WORDS.mcpReadVerbs)
 export const MCP_COMMENT = new RegExp(WORDS.mcpCommentNames.join('|'), 'i')
@@ -61,7 +62,8 @@ export const CLASS_NOUNS: ReadonlyArray<readonly [EntityKind, RegExp]> = (
   Object.entries(WORDS.classNouns) as [EntityKind, readonly string[]][]
 ).map(([kind, nouns]) => [kind, new RegExp(String.raw`\b(?:${alt(nouns)})\b`, 'i')] as const)
 
-export const CHANGELOG_FILE = new RegExp(PATTERNS.changelogFile)
+/** Case-insensitive: the contract names the artifact kind, not its casing (QA 2026-09-17 finding 16b). */
+export const CHANGELOG_FILE = new RegExp(PATTERNS.changelogFile, 'i')
 export const GIT_COMMIT = new RegExp(PATTERNS.gitCommit)
 export const PR_BODY = new RegExp(PATTERNS.prBody)
 

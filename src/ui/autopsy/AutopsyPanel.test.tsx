@@ -71,7 +71,7 @@ describe('AutopsyPanel per fixture', () => {
     const row = report.items[1]
     expect(html).toContain('>DEGRADED<')
     expect(html).toContain(`>${row.survival.score.toFixed(2)}<`)
-    expect(html).toContain(`MATCHED · ${row.downstream.hit?.tool} · `)
+    expect(html).toContain(`INCONSISTENT ACTION · ${row.downstream.hit?.tool} · `)
     expect(html).toContain(INCONSISTENT_LABEL)
     expect(html).toContain('mcp__tracker__save_comment')
     expect(html).toContain(escapeHtml(row.downstream.hit?.excerpt ?? '?'))
@@ -83,11 +83,15 @@ describe('AutopsyPanel per fixture', () => {
   it('file-edit: the file rule LOST, the Edit as the first action, the restatement with time and score', () => {
     const { html } = panel('constructed-file-edit', '0:51:0')
     expect(html).toContain('>LOST<')
-    expect(html).toContain('MATCHED · Edit · 18:40:48')
+    expect(html).toContain('INCONSISTENT ACTION · Edit · 18:40:48')
     expect(html).toContain(INCONSISTENT_LABEL)
     expect(html).toContain('forbidden_path')
     expect(html).toContain('before restatement')
     expect(html).toContain('restated at 18:48:48 UTC (0.70, by score)')
+    // QA finding 13: the order row exists only when something was restated
+    const ticket = panel('constructed-ticket', '0:91:1').html
+    expect(ticket).toContain('not restated')
+    expect(ticket).not.toContain('before restatement')
     expect(html).toContain('summary line 21: ')
     expect(html).toContain('«</span>rotate_keys.py<span aria-hidden="true">»')
     expect(html).toContain(escapeHtml(CLOSING_LINE))

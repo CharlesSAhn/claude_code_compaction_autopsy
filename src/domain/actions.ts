@@ -124,7 +124,8 @@ export function pathMatches(fp: string, anchor: string): boolean {
  * rule as the file-tool path match; a longer suffix (`old_scripts/x.sh`, `x.sh.bak`) is not it.
  */
 export function bashWriteHit(cmd: string, anchor: string): boolean {
-  const c = stripLiterals(cmd)
+  // QA 2026-09-17 finding 16: `> "file"` is a write to file; unquote redirect targets before literals go.
+  const c = stripLiterals(cmd.replace(/(>>?\s*)(["'])([^"'\n]+)\2/g, '$1$3'))
   const A = String.raw`(?<![\w.\-])` + escapeRegex(anchor) + String.raw`(?![\w.\-])`
   const anchorRe = new RegExp(A)
   const redirectRe = new RegExp(String.raw`(?:^|[^<>])>>?\s*(?:\S*/)?` + A)

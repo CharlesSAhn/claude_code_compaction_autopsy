@@ -340,7 +340,7 @@ export function StoryView({
         ) : layout.links.length > 0 ? (
           <span>◆ {INCONSISTENT_LABEL}</span>
         ) : (
-          <span>No downstream action linked in this report.</span>
+          <span>none found</span>
         )}
       </figcaption>
     </figure>

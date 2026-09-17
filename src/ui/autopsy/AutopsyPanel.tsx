@@ -38,7 +38,7 @@ function statusWord(row: ItemReport): string {
 
 function afterCell(row: ItemReport, scanned: number): string {
   const d = row.downstream
-  if (d.result === 'matched' && d.hit) return `MATCHED · ${d.hit.tool} · ${formatTime(d.hit.ts)}`
+  if (d.result === 'matched' && d.hit) return `INCONSISTENT ACTION · ${d.hit.tool} · ${formatTime(d.hit.ts)}`
   if (d.result === 'none_found') return `NONE FOUND · ${scanned} tool calls after`
   return 'NOT CHECKABLE'
 }

@@ -37,3 +37,24 @@ Log of every change to the frozen contract. One entry per refreeze: date, versio
   calls in it, which is not the per-item in-scope count the spec wording asked for. Ruled
   2026-09-16 (T4-autopsy): no refreeze now; the UI words the count as what it counts, "N tool
   calls after the compaction, none matched", with the window end beside it.
+- 2026-09-17, **first in line for v3**: `PATTERNS.ticket` (`[A-Z]{2,6}-\d{2,6}`) matches
+  `SHA-256`, `ISO-8601`, `UTF-16`, `RFC-2119`, `COVID-19`. With a ticket class anchor, an
+  ordinary commit message "use SHA-256 for hashing" is reported under `INCONSISTENT_LABEL`.
+  This fires on real data fast. QA review 2026-09-17, finding 4.
+- 2026-09-17, stage 1 anchors: every concrete entity in the trigger clause becomes a forbidden
+  anchor, including the location the rule permits ("Don't call reset_db() outside
+  tests/helpers.py" forbids editing tests/helpers.py). QA finding 2.
+- 2026-09-17, `WORDS.writePatterns` lists `cp` without argument position, so `cp <anchor>
+  /tmp/backup` (a read of the anchor) is a `bash_write` hit. QA finding 3.
+- 2026-09-17, stage 1 triggers: a sentence with a negation word that is not a rule ("I do not
+  know why build_all fails on ci-runner.internal") is extracted as a negation rule with anchors.
+  QA finding 6.
+- 2026-09-17, stage 5 restatement by entities: a post-boundary sentence that relaxes the rule
+  ("prod-db.internal is fine, rotate_keys.sh too, don't worry") carries all entities and a
+  negation word, so it counts as a restatement. QA finding 7.
+- 2026-09-17, two comment mismatches in the frozen types file, to correct at the next refreeze:
+  the `scope` comment says "from the scope-noun map" but path and style anchors carry
+  `['file_edit','bash_write']` and `['file_edit']` as the doc states; the `structuralSection`
+  comment says "when the summary has one" but the doc and code set it only when the best passage
+  lies in such a section. QA finding 15.
+

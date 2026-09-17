@@ -49,8 +49,12 @@ export function AfterBlock({ session, compactionIndex, row, onJumpToMessage }: A
             <dd>{downstream.hit.artifact}</dd>
             <dt>excerpt</dt>
             <dd className="mono">{downstream.hit.excerpt}</dd>
-            <dt>order</dt>
-            <dd>{downstream.hit.afterRestatement ? 'after restatement' : 'before restatement'}</dd>
+            {restatement ? (
+              <>
+                <dt>order</dt>
+                <dd>{downstream.hit.afterRestatement ? 'after restatement' : 'before restatement'}</dd>
+              </>
+            ) : null}
           </dl>
         </>
       ) : downstream.result === 'none_found' ? (

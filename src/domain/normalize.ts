@@ -100,7 +100,9 @@ export function scorePassage(itemToks: string[], entSet: Set<string>, ptoks: Raw
 export function entityPresent(kind: EntityKind, value: string, text: string): boolean {
   const v = norm(value)
   const before = String.raw`(?<![\w\-])(?<!\w\.)` + (kind === 'path' ? '' : String.raw`(?<!/)`)
-  return new RegExp(before + escapeRegex(v) + String.raw`(?![\w\-])(?!\.\w)`).test(text)
+  // QA 2026-09-17 finding 1: a path followed by `/` is a directory prefix of a longer token, not the path.
+  const after = String.raw`(?![\w\-])(?!\.\w)` + (kind === 'path' ? String.raw`(?!/)` : '')
+  return new RegExp(before + escapeRegex(v) + after).test(text)
 }
 
 /** Smallest span of the raw passage covering all matches; «…» exact, «~…» fuzzy; adjacent same-kind marks merge. */

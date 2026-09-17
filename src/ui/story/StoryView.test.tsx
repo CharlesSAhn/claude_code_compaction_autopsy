@@ -48,3 +48,13 @@ describe('StoryView renderToString smoke', () => {
     expect(html.toLowerCase()).not.toContain('because of the compaction')
   })
 })
+
+describe('StoryView play story and motion', () => {
+  it('renders the Play story control and the whole end state when not playing', () => {
+    const html = renderToString(<StoryView report={STUB_REPORT} compaction={STUB_COMPACTION} motion={false} />)
+    expect(html).toContain('Play story')
+    expect(html).toContain('data-act="0"')
+    expect(html).toContain('class="story-after" opacity="1"')
+    expect(html).toContain('<clipPath')
+  })
+})

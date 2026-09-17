@@ -31,3 +31,9 @@ __pycache__/
 screenshots/
 test-results/
 playwright-report/
+
+# Local session transcripts for analysis, never committed
+dev-transcripts/
+
+# Agent worktrees
+.claude/worktrees/

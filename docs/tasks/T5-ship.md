@@ -44,7 +44,7 @@ CloudFront, custom domain, auth, any code change; `curl` verification (T8-polish
 
 ## Deploy log
 
-2026-09-17, attempt 1 of 3, `AWS_PROFILE=project`, account 197961295604, user `project`.
+2026-09-17, attempt 1 of 3, `AWS_PROFILE=project`, account <redacted>, user `project`.
 Bucket setup: `create-bucket`, bucket-level public access block off, website config with
 `index.html` as index and error document, public `s3:GetObject` policy; policy status
 `IsPublic: true`. Fresh-export build: `git archive HEAD | tar -x -C <tmp>`, then

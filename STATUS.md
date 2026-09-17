@@ -14,7 +14,7 @@ Time spent waiting on a question is excluded. Running total sums closed rows.
 | T2-engine | closed | 8f53285 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 49 |
 | T3-ui-shell | closed | 26fcfb2 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 62 |
 | T6-story-view | closed | 3fd6f64 | 2026-09-17T01:10:16Z | 2026-09-17T02:24:47Z | 13 | 75 |
-| T4-autopsy | open | | | | | |
+| T4-autopsy | closed | c42998e | 2026-09-17T02:34:57Z | 2026-09-17T02:57:00Z | 17 | 92 |
 | T7-qa | open | | | | | |
 | T5-ship | open | | | | | |
 | T8-polish | open | | | | | |

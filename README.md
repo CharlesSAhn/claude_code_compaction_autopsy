@@ -93,7 +93,10 @@ browser download is needed. `BASE_URL` picks the target; the default is the prev
 
 ## Deployed at
 
-URL: (set by T5-ship)
+URL: http://charles-ahn-compaction-autopsy.s3-website-us-east-1.amazonaws.com
+
+S3 static website, bucket `charles-ahn-compaction-autopsy`, us-east-1, plain HTTP. Deployed
+2026-09-17 from `a291e9d`.
 
 ## Layout of the repo
 

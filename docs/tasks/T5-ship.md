@@ -44,4 +44,38 @@ CloudFront, custom domain, auth, any code change; `curl` verification (T8-polish
 
 ## Deploy log
 
-(pasted at close)
+2026-09-17, attempt 1 of 3, `AWS_PROFILE=project`, account 197961295604, user `project`.
+Bucket setup: `create-bucket`, bucket-level public access block off, website config with
+`index.html` as index and error document, public `s3:GetObject` policy; policy status
+`IsPublic: true`. Fresh-export build: `git archive HEAD | tar -x -C <tmp>`, then
+`npm ci --ignore-scripts && npm run build` (plain `npm ci` fails in the export because the
+`prepare` script runs `git config core.hooksPath` and the export is not a git repo; the build
+is unaffected). `grep -rn "fetch(" dist/assets` has one hit, Vite's modulepreload polyfill, not
+app code; no fixture is fetched at runtime.
+
+```
+AUTOPSY_BUCKET=charles-ahn-compaction-autopsy AWS_REGION=us-east-1 bash scripts/deploy-s3.sh
+deploy-s3: building
+> compaction-autopsy@0.0.0 build
+> tsc -b && vite build
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 364 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.30 kB
+dist/assets/index-CSY-w3q9.css   10.06 kB │ gzip:   2.74 kB
+dist/assets/index-CziMbJaQ.js   588.01 kB │ gzip: 172.60 kB
+✓ built in 148ms
+deploy-s3: syncing dist/ to s3://charles-ahn-compaction-autopsy
+upload: dist/index.html to s3://charles-ahn-compaction-autopsy/index.html
+upload: dist/favicon.svg to s3://charles-ahn-compaction-autopsy/favicon.svg
+upload: dist/assets/index-CSY-w3q9.css to s3://charles-ahn-compaction-autopsy/assets/index-CSY-w3q9.css
+upload: dist/assets/index-CziMbJaQ.js to s3://charles-ahn-compaction-autopsy/assets/index-CziMbJaQ.js
+deploy-s3: done
+website URL: http://charles-ahn-compaction-autopsy.s3-website-us-east-1.amazonaws.com
+(some regions use a dot: http://charles-ahn-compaction-autopsy.s3-website.us-east-1.amazonaws.com)
+```
+
+Verification: `/` 200 text/html, deep link 200, bundle 200 text/javascript, unknown path 404
+with the app. `BASE_URL=<url> npm run e2e` 1 passed. `npm run screenshots -- <url>` four PNGs.

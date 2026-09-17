@@ -83,8 +83,12 @@ confirms the URL opens on a phone and shows the ticket case by default.
 
 ## URL as deployed
 
-URL: (set by T5-ship)
+URL: http://charles-ahn-compaction-autopsy.s3-website-us-east-1.amazonaws.com
 
-Bucket: (set by T5-ship)
+Bucket: `charles-ahn-compaction-autopsy`
 
-Region: (set by T5-ship)
+Region: us-east-1
+
+Deployed 2026-09-17 from `a291e9d` (attempt 1 of 3). Account-level public access block: none
+configured; the bucket-level block was turned off for this bucket only. Error document is
+`index.html`, so unknown paths return the app with a 404 status.

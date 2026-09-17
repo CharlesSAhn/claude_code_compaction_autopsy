@@ -5,12 +5,14 @@
  */
 import {
   LIMITS,
+  type Anchor,
   type ArtifactKind,
   type DownstreamEvidence,
   type Item,
   type Matcher,
   type ToolAction,
 } from './contract'
+import { entityPresent, norm } from './normalize'
 import {
   ARTIFACT_PRECEDENCE,
   CHANGELOG_FILE,
@@ -145,17 +147,29 @@ export interface MatcherSpec {
   matcher: Matcher
   /** Anchor value; `*<kind>` for a class anchor; the call name (no parens) for a style token. */
   needle: string
+  kind: Anchor['kind']
   scope: ArtifactKind[]
 }
 
 export function matchersOf(item: Item): MatcherSpec[] {
   const out: MatcherSpec[] = []
   for (const a of item.anchors) {
-    if (a.kind === 'path' && a.value !== '*') out.push({ matcher: 'forbidden_path', needle: a.value, scope: ['file_edit', 'bash_write'] })
-    else if (a.kind === 'ident' && a.value.endsWith('()')) out.push({ matcher: 'style_token', needle: a.value.slice(0, -2), scope: ['file_edit'] })
-    else out.push({ matcher: 'forbidden_token', needle: a.value === '*' ? '*' + a.kind : a.value, scope: scopeOf(item.text) })
+    if (a.kind === 'path' && a.value !== '*') out.push({ matcher: 'forbidden_path', needle: a.value, kind: a.kind, scope: ['file_edit', 'bash_write'] })
+    else if (a.kind === 'ident' && a.value.endsWith('()')) out.push({ matcher: 'style_token', needle: a.value.slice(0, -2), kind: a.kind, scope: ['file_edit'] })
+    else out.push({ matcher: 'forbidden_token', needle: a.value === '*' ? '*' + a.kind : a.value, kind: a.kind, scope: scopeOf(item.text) })
   }
   return out
+}
+
+/**
+ * Where a whole-token anchor sits in the raw text, for the excerpt: the same boundaries as
+ * `entityPresent`, case-insensitive; a plain case-insensitive find as the fallback.
+ */
+export function tokenPosition(text: string, needle: string): number {
+  const re = new RegExp(String.raw`(?<![\w\-])(?<!\w\.)(?<!/)` + escapeRegex(needle) + String.raw`(?![\w\-])(?!\.\w)`, 'i')
+  const m = re.exec(text)
+  if (m) return m.index
+  return Math.max(text.toLowerCase().indexOf(needle.toLowerCase()), 0)
 }
 
 /** Walk the post-boundary tool calls in order; the first call any matcher hits wins. */
@@ -166,7 +180,7 @@ export function firstInconsistent(item: Item, postTools: readonly PostTool[], re
   if (!ms.length) return { result: 'none_matchable', scope: [] }
   for (const { ts, action } of postTools) {
     const name = action.tool
-    for (const { matcher, needle, scope: sc } of ms) {
+    for (const { matcher, needle, kind, scope: sc } of ms) {
       let hit: [ArtifactKind, string] | undefined
       if (matcher === 'forbidden_path') {
         const fp = action.filePath ?? ''
@@ -183,13 +197,13 @@ export function firstInconsistent(item: Item, postTools: readonly PostTool[], re
           if (m) hit = ['file_edit', excerptAround(added, m.index)]
         }
       } else {
-        for (const [kind, text] of tokenTexts(action, sc)) {
+        for (const [artifactKind, text] of tokenTexts(action, sc)) {
           if (needle.startsWith('*')) {
             const m = CLASS_RES[needle.slice(1) as keyof typeof CLASS_RES].exec(text)
-            if (m) hit = [kind, excerptAround(text, m.index)]
-          } else {
-            const p = text.indexOf(needle)
-            if (p >= 0) hit = [kind, excerptAround(text, p)]
+            if (m) hit = [artifactKind, excerptAround(text, m.index)]
+          } else if (entityPresent(kind, needle, norm(text))) {
+            // Contract v2: whole token, the same rule as survival, never a substring.
+            hit = [artifactKind, excerptAround(text, tokenPosition(text, needle))]
           }
           if (hit) break
         }

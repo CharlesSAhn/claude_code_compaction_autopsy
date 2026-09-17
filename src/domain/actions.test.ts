@@ -207,3 +207,21 @@ describe('file rule: Bash write through a longer path', () => {
     }
   })
 })
+
+describe('never mention VLX-4127: whole-token match (contract v2)', () => {
+  const item = itemOf(MENTION_RULE)
+  const commit = (msg: string) => firstInconsistent(item, [call('Bash', { command: `git commit -m "${msg}"` })], undefined)
+  it('a longer id sharing the prefix, or a prefixed id, is not this ticket', () => {
+    expect(commit('VLX-41271 fixed').result).toBe('none_found')
+    expect(commit('XVLX-4127 fixed').result).toBe('none_found')
+    expect(commit('see VLX-4127-b').result).toBe('none_found')
+  })
+  it('the id as a token, in any case, next to punctuation, is', () => {
+    for (const msg of ['vlx-4127 fixed', 'fixes (VLX-4127)', 'see VLX-4127.', 'VLX-4127']) {
+      const d = commit(msg)
+      expect(d.result, msg).toBe('matched')
+      expect(d.hit, msg).toMatchObject({ matcher: 'forbidden_token', artifact: 'commit' })
+    }
+    expect(commit('fixes (VLX-4127)').hit?.excerpt).toBe('fixes (VLX-4127)')
+  })
+})

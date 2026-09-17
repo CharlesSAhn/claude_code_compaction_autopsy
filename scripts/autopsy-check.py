@@ -477,25 +477,34 @@ def matchers_of(item):
     sent, out = item["text"], []
     for k, v in item["anchors"]:
         if k == "path" and v != "*":
-            out.append(("forbidden_path", v, ["file_edit", "bash_write"]))
+            out.append(("forbidden_path", v, ["file_edit", "bash_write"], k))
         elif k == "ident" and v.endswith("()"):
-            out.append(("style_token", v[:-2], ["file_edit"]))
+            out.append(("style_token", v[:-2], ["file_edit"], k))
         else:
-            out.append(("forbidden_token", v if v != "*" else "*" + k, scope_of(sent)))
+            out.append(("forbidden_token", v if v != "*" else "*" + k, scope_of(sent), k))
     return out
+
+
+def token_position(text, needle):
+    """Where a whole-token anchor sits in the raw text, for the excerpt: the same boundaries as
+    entity_present, case-insensitive; a plain case-insensitive find as the fallback."""
+    m = re.search(r"(?<![\w\-])(?<!\w\.)(?<!/)" + re.escape(needle) + r"(?![\w\-])(?!\.\w)", text, re.I)
+    if m:
+        return m.start()
+    return max(text.lower().find(needle.lower()), 0)
 
 
 def first_inconsistent(item, post_tools, restated_ts):
     """post_tools: [(ts, action)] in order. Returns a DownstreamEvidence-shaped dict."""
     ms = matchers_of(item)
     scope = []
-    for _, _, sc in ms:
+    for _, _, sc, _ in ms:
         scope += [k for k in sc if k not in scope]
     if not ms:
         return dict(result="none_matchable", scope=[])
     for ts, action in post_tools:
         name = action["tool"]
-        for mn, ent, sc in ms:
+        for mn, ent, sc, kind in ms:
             hit = None  # (artifact, excerpt)
             if mn == "forbidden_path":
                 fp = action.get("filePath", "")
@@ -511,15 +520,14 @@ def first_inconsistent(item, post_tools, restated_ts):
                     if m:
                         hit = ("file_edit", excerpt_around(added, m.start(), len(ent)))
             else:
-                for kind, text in token_texts(action, sc):
+                for akind, text in token_texts(action, sc):
                     if ent.startswith("*"):
                         m = CLASS_RES[ent[1:]].search(text)
                         if m:
-                            hit = (kind, excerpt_around(text, m.start(), len(m.group(0))))
-                    else:
-                        p = text.find(ent)
-                        if p >= 0:
-                            hit = (kind, excerpt_around(text, p, len(ent)))
+                            hit = (akind, excerpt_around(text, m.start(), len(m.group(0))))
+                    elif entity_present(kind, ent, norm(text)):
+                        # Contract v2: whole token, the same rule as survival, never a substring.
+                        hit = (akind, excerpt_around(text, token_position(text, ent), len(ent)))
                     if hit:
                         break
             if hit:

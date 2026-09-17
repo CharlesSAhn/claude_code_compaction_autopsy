@@ -130,8 +130,10 @@ including MCP; the first hit wins)
    the anchor as a standalone token (`> path`, `sed -i … path`, `rm path`). `cat path
    2>/dev/null`, running the script, or a `git add` of a different file is not a match.
 8. forbidden-token (concrete ticket, host, or non-call ident anchor, or any class anchor):
-   in-scope text from step 6 contains the anchor value, or, for a class anchor, matches the
-   class regex.
+   in-scope text from step 6 contains the anchor value as a whole token (contract v2: both
+   normalized as in stage 2, the same presence rule as the survival entity check, so
+   `VLX-41271` and `XVLX-4127` are not `VLX-4127` while `vlx-4127` and `(VLX-4127)` are),
+   or, for a class anchor, matches the class regex.
 9. style-token (ident anchor ending in `()`, such as `print()`): a file tool on a file whose
    extension is in `.py` `.ts` `.tsx` `.js` `.sh`, whose `addedText` contains the call name at a
    word boundary followed by `(` (`blueprint(` is not `print(`).

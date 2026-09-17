@@ -45,7 +45,9 @@ A third fix; new features; anything from the backlog; a contract change.
 
 ## Fixes
 
-(filled at close)
+1. Pre-ship, from the session-5 browser round (1 of 2): the story's "compaction · auto" band label
+   printed over the AFTER region caption. `src/ui/story/StoryView.tsx`: the AFTER caption is
+   anchored at the drawing's right edge. No layout change.
 
 ## Deploy log
 

@@ -256,7 +256,7 @@ export function StoryView({
         <text x={layout.before.x0} y={14} fontSize={11} fill={MUTED} letterSpacing={1}>
           BEFORE
         </text>
-        <text x={layout.after.x0} y={14} fontSize={11} fill={MUTED} letterSpacing={1}>
+        <text x={layout.after.x1} y={14} fontSize={11} fill={MUTED} letterSpacing={1} textAnchor="end">
           AFTER
         </text>
 

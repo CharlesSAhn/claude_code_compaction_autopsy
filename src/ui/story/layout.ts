@@ -3,8 +3,11 @@
  *
  * Horizontal axis: before region | compaction band | after region. One ribbon per item, ordered
  * by `origin.line`. PRESERVED and DEGRADED ribbons cross the band; LOST ribbons stop at it.
- * Matched items get a dashed link from the ribbon's band point to a diamond placed by `hit.ts`.
- * A restatement is a hollow circle on the ribbon at its time.
+ * Matched items get a dashed link from the ribbon's band point to a diamond placed by `hit.ts`;
+ * for a LOST ribbon that point is where it stops, the band's left edge. A restatement is a hollow
+ * circle on the ribbon at its time; when the ribbon does not reach that time (LOST), a dotted
+ * stem joins the ribbon's end to the circle. The diamond's tool label sits to the right, or to
+ * the left when it would run past the drawing's right edge.
  */
 import { scaleTime } from 'd3-scale'
 import { line as d3Line } from 'd3-shape'
@@ -47,6 +50,9 @@ export interface LinkLayout {
   path: string
   diamond: { x: number; y: number; size: number }
   tool: string
+  /** Where the tool label starts and which way it runs, kept inside the drawing. */
+  labelX: number
+  labelAnchor: 'start' | 'end'
   hit: ActionHit
 }
 
@@ -56,6 +62,8 @@ export interface MarkerLayout {
   y: number
   r: number
   label: 'restated'
+  /** Dotted path from the ribbon's end to the circle when the ribbon does not reach it. */
+  stem?: string
   restatement: Restatement
 }
 
@@ -86,6 +94,9 @@ export const LEFT_PAD = 16
 export const RIGHT_PAD = 16
 export const BAND_WIDTH = 18
 export const LABEL_MAX = 48
+/** Estimated advance per character of the 11 px tool label, for keeping it inside the drawing. */
+const LABEL_CHAR_W = 6.6
+const DIAMOND = 7
 
 /** Fraction of the drawable width taken by the before region. */
 const BEFORE_FRACTION = 0.5
@@ -187,11 +198,13 @@ export function layoutStory(report: Report, size: StorySize, compaction?: Compac
       const hit = r.downstream.hit
       const dx = placeTime(hit.ts)
       const dy = y + 14
-      const lx0 = afterX0
+      // The ribbon's band point: where a LOST ribbon stops, else where a crossing one leaves the band.
+      const lx0 = lost ? x1 : afterX0
       const linkPath = lineGen([
         [lx0, y],
         [dx, dy],
       ]) ?? ''
+      const labelFits = dx + DIAMOND + 4 + hit.tool.length * LABEL_CHAR_W <= afterX1
       links.push({
         itemId: r.item.id,
         x0: lx0,
@@ -199,21 +212,26 @@ export function layoutStory(report: Report, size: StorySize, compaction?: Compac
         x1: dx,
         y1: dy,
         path: linkPath,
-        diamond: { x: dx, y: dy, size: 7 },
+        diamond: { x: dx, y: dy, size: DIAMOND },
         tool: hit.tool,
+        labelX: labelFits ? dx + DIAMOND + 4 : dx - DIAMOND - 4,
+        labelAnchor: labelFits ? 'start' : 'end',
         hit,
       })
     }
 
     if (r.restatement) {
-      markers.push({
+      const mx = placeTime(r.restatement.ts)
+      const marker: MarkerLayout = {
         itemId: r.item.id,
-        x: placeTime(r.restatement.ts),
+        x: mx,
         y,
         r: 5,
         label: 'restated',
         restatement: r.restatement,
-      })
+      }
+      if (mx > x1) marker.stem = lineGen([[x1, y], [mx, y]]) ?? ''
+      markers.push(marker)
     }
   })
 

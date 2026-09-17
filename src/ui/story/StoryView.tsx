@@ -152,7 +152,7 @@ function Link({ link, lit, onClick }: { link: LinkLayout; lit: boolean; onClick:
         stroke="var(--surface, transparent)"
         strokeWidth={2}
       />
-      <text x={x + s + 4} y={y + 4} fontSize={11} fill="currentColor">
+      <text x={link.labelX} y={y + 4} fontSize={11} fill="currentColor" textAnchor={link.labelAnchor}>
         {link.tool}
       </text>
       <title>{`${INCONSISTENT_LABEL} · ${link.tool} · ${link.hit.ts}`}</title>
@@ -311,6 +311,9 @@ export function StoryView({
         <g ref={afterRef} className="story-after" opacity={showAfter ? 1 : 0}>
           {layout.markers.map((m) => (
             <g key={`m-${m.itemId}`} className="story-marker" data-item-id={m.itemId}>
+              {m.stem !== undefined && (
+                <path className="story-marker__stem" d={m.stem} stroke={MUTED} strokeWidth={1} strokeDasharray="1 3" fill="none" />
+              )}
               <circle cx={m.x} cy={m.y} r={m.r} fill="var(--surface, transparent)" stroke="currentColor" strokeWidth={1.5} />
               <text x={m.x} y={m.y - m.r - 3} fontSize={10} fill={MUTED} textAnchor="middle">
                 {m.label}

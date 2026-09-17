@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { layoutStory, regionOf, shortText } from '../layout'
-import { STUB_COMPACTION, STUB_REPORT } from './stub-report'
+import { STUB_COMPACTION, STUB_REPORT, STUB_REPORT_LOST_MATCHED } from './stub-report'
 
 const SIZE = { width: 800 }
 
@@ -64,6 +64,13 @@ describe('layoutStory', () => {
     expect(link.tool).toBe('mcp__tracker__save_comment')
   })
 
+  it('a long tool label at the latest event runs leftwards from the diamond, inside the drawing', () => {
+    const link = layout.links[0]
+    expect(link.labelAnchor).toBe('end')
+    expect(link.labelX).toBeLessThan(link.diamond.x)
+    expect(link.labelX).toBeLessThanOrEqual(layout.after.x1)
+  })
+
   it('a restatement is a hollow circle on its ribbon in the after region, earlier than the later hit', () => {
     expect(layout.markers).toHaveLength(1)
     const m = layout.markers[0]
@@ -72,6 +79,7 @@ describe('layoutStory', () => {
     expect(m.label).toBe('restated')
     expect(regionOf(m.x, layout)).toBe('after')
     expect(m.x).toBeLessThan(layout.links[0].diamond.x)
+    expect(m.stem).toBeUndefined() // the ribbon crosses, so it is under the circle already
   })
 
   it('without a compaction the band still lays out and says the facts are not available', () => {
@@ -83,6 +91,33 @@ describe('layoutStory', () => {
 
   it('clamps to a minimum width', () => {
     expect(layoutStory(STUB_REPORT, { width: 100 }).width).toBe(320)
+  })
+})
+
+describe('layoutStory, a LOST item that is matched and restated (the file-edit shape)', () => {
+  const layout = layoutStory(STUB_REPORT_LOST_MATCHED, SIZE, STUB_COMPACTION)
+  const ribbon = layout.ribbons[0]
+
+  it('the link starts where the ribbon stops, at the band', () => {
+    expect(ribbon.x1).toBe(layout.band.x)
+    expect(layout.links).toHaveLength(1)
+    expect(layout.links[0].x0).toBe(ribbon.x1)
+    expect(layout.links[0].y0).toBe(ribbon.y)
+  })
+
+  it('the restatement circle sits at its time on the ribbon row, joined to the ribbon by a stem', () => {
+    expect(layout.markers).toHaveLength(1)
+    const m = layout.markers[0]
+    expect(m.y).toBe(ribbon.y)
+    expect(m.x).toBeGreaterThan(ribbon.x1)
+    expect(regionOf(m.x, layout)).toBe('after')
+    expect(m.stem).toBeDefined()
+    expect(m.stem).toContain(`M${ribbon.x1},${ribbon.y}`)
+  })
+
+  it('a short tool label at the earliest event sits to the right of the diamond', () => {
+    expect(layout.links[0].labelAnchor).toBe('start')
+    expect(layout.links[0].labelX).toBeGreaterThan(layout.links[0].diamond.x)
   })
 })
 

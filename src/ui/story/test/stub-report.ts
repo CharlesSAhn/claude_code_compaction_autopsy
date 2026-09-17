@@ -103,3 +103,41 @@ export const STUB_REPORT: Report = {
   items: [items[2], items[0], items[3], items[1]],
   closing: CLOSING_LINE,
 }
+
+/**
+ * The constructed-file-edit shape: one LOST item that is matched (an Edit soon after the boundary)
+ * and restated later. Exercises the link from a stopped ribbon and the stem to its restatement.
+ */
+export const STUB_REPORT_LOST_MATCHED: Report = {
+  sessionId: 'stub-session-lost',
+  compactionIndex: 0,
+  items: [
+    {
+      item: {
+        id: '0:51:0',
+        compactionIndex: 0,
+        text: "don't modify scripts/rotate_keys.sh, platform team owns it, build rotate_keys.py alongside it",
+        class: 'negation',
+        entities: [{ kind: 'path', value: 'scripts/rotate_keys.sh' }],
+        anchors: [{ kind: 'path', value: 'scripts/rotate_keys.sh' }],
+        origin: { messageUuid: 'm-51', ts: '2026-09-16T17:02:00.000Z', line: 51 },
+      },
+      survival: survival('LOST', 0, 'The user wants me to locate remaining references', 9),
+      downstream: {
+        result: 'matched',
+        scope: ['file_edit', 'bash_write'],
+        hit: {
+          toolUseId: 'toolu-c-file-0002',
+          ts: '2026-09-16T18:40:30.000Z',
+          tool: 'Edit',
+          matcher: 'forbidden_path',
+          artifact: 'file_edit',
+          excerpt: '/repo/scripts/rotate_keys.sh',
+          afterRestatement: false,
+        },
+      },
+      restatement: { messageUuid: 'c-file-0003', ts: '2026-09-16T18:48:48.000Z', score: 0.9, by: 'score' },
+    },
+  ],
+  closing: CLOSING_LINE,
+}

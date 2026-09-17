@@ -2,7 +2,7 @@ import { renderToString } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { INCONSISTENT_LABEL } from '../../domain'
 import { StoryView } from './StoryView'
-import { STUB_COMPACTION, STUB_REPORT } from './test/stub-report'
+import { STUB_COMPACTION, STUB_REPORT, STUB_REPORT_LOST_MATCHED } from './test/stub-report'
 
 describe('StoryView renderToString smoke', () => {
   const html = renderToString(<StoryView report={STUB_REPORT} compaction={STUB_COMPACTION} selectedItemId="0:91:1" />)
@@ -46,6 +46,22 @@ describe('StoryView renderToString smoke', () => {
     const banned = ['cau', 'sed'].join('')
     expect(html.toLowerCase()).not.toContain(banned)
     expect(html.toLowerCase()).not.toContain('because of the compaction')
+  })
+})
+
+describe('StoryView, a LOST item that is matched and restated', () => {
+  const html = renderToString(<StoryView report={STUB_REPORT_LOST_MATCHED} compaction={STUB_COMPACTION} />)
+
+  it('draws the stem to the restatement and the dashed link from the stopped ribbon', () => {
+    expect(html).toContain('story-marker__stem')
+    expect(html).toContain('restated')
+    expect(html).toContain('stroke-dasharray="3 3"')
+    expect(html).toContain('story-ribbon--lost')
+  })
+
+  it('keeps the long tool label inside the drawing by anchoring it at its end', () => {
+    const wide = renderToString(<StoryView report={STUB_REPORT} compaction={STUB_COMPACTION} />)
+    expect(wide).toContain('text-anchor="end">mcp__tracker__save_comment')
   })
 })
 

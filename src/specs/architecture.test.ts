@@ -41,11 +41,12 @@ function walk(dir: string): string[] {
   return out
 }
 
+// A static import or re-export, with the clause allowed to span lines inside `{ … }`, or a
+// literal dynamic import. `[^'"\n{]*` and `[^'"\n]*?` keep a clause on one line otherwise.
 const IMPORT_RE =
-  /(?:^|\n)\s*(?:import|export)\s+(?:[^'"\n]*?\s+from\s+)?['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+  /(?:^|\n)\s*(?:import|export)\s+(?:[^'"\n{]*(?:\{[^}]*\})?[^'"\n]*?\s+from\s+)?['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
 
-function importsOf(file: string): ImportSite[] {
-  const text = readFileSync(file, 'utf8')
+export function importsOfText(text: string, file = ''): ImportSite[] {
   const sites: ImportSite[] = []
   for (const m of text.matchAll(IMPORT_RE)) {
     const specifier = m[1] ?? m[2]
@@ -55,6 +56,10 @@ function importsOf(file: string): ImportSite[] {
     sites.push({ file, line, specifier })
   }
   return sites
+}
+
+function importsOf(file: string): ImportSite[] {
+  return importsOfText(readFileSync(file, 'utf8'), file)
 }
 
 function isRelative(spec: string): boolean {
@@ -85,6 +90,31 @@ function describeViolation(site: ImportSite, why: string): string {
 const allFiles = walk(SRC)
 
 describe('architecture', () => {
+  it('the import scanner sees one-line, multi-line, type, side-effect, and re-export forms', () => {
+    const text = [
+      "import {",
+      "  a,",
+      "  b,",
+      "} from './x'",
+      'import type { T } from "./y"',
+      "import './z'",
+      "export * from './w'",
+      "import React, {",
+      "  useState,",
+      "} from 'react'",
+      "const v = import('./dyn')",
+      '',
+    ].join('\n')
+    expect(importsOfText(text).map((s) => [s.line, s.specifier])).toEqual([
+      [1, './x'],
+      [5, './y'],
+      [6, './z'],
+      [7, './w'],
+      [8, 'react'],
+      [11, './dyn'],
+    ])
+  })
+
   it('R4: the domain has a single public entry point', () => {
     expect(existsSync(join(DOMAIN, 'index.ts'))).toBe(true)
   })

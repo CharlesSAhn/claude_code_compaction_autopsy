@@ -2,6 +2,8 @@
  * The four query keys the screen carries: session, compaction, item, view. Read on load, written
  * on every change, no routing. A missing or unknown value falls back to the default.
  */
+import type { SessionSource } from '../../adapters/session-source.ts'
+
 export type View = 'ledger' | 'story' | 'evidence'
 
 export const VIEWS: readonly View[] = ['ledger', 'story', 'evidence']
@@ -62,10 +64,24 @@ export function serializeUrlState(state: UrlState): string {
   return s === '' ? '' : `?${s}`
 }
 
-/** Read the state from the browser URL; the defaults alone when there is no window (tests). */
-export function readUrlState(defaults: UrlDefaults): UrlState {
-  const search = typeof window === 'undefined' ? '' : window.location.search
-  return parseUrlState(search, defaults)
+/** The browser's query string; '' when there is no window (tests, server render). */
+export function currentSearch(): string {
+  return typeof window === 'undefined' ? '' : window.location.search
+}
+
+/**
+ * The state for a query string over a source: the session is resolved first, then `compaction=`
+ * and `item=` are bounded by that session, so nothing the URL cannot derive from it survives.
+ */
+export function initialUrlState(source: SessionSource, search: string): UrlState {
+  const base: UrlDefaults = { sessionIds: source.list().map((r) => r.id), defaultSession: source.defaultId() }
+  const first = parseUrlState(search, base)
+  const session = first.session !== undefined ? source.get(first.session) : undefined
+  return parseUrlState(search, {
+    ...base,
+    compactionCount: session?.compactions.length ?? 0,
+    itemIds: session?.items?.map((i) => i.id) ?? [],
+  })
 }
 
 /** Write the state to the browser URL without a navigation; no-op without a window. */

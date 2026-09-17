@@ -8,7 +8,7 @@ import { Timeline } from '../timeline/Timeline.tsx'
 import { Footer } from './Footer.tsx'
 import { Header } from './Header.tsx'
 import { AutopsySlot, StorySlot } from './slots.tsx'
-import { parseUrlState, readUrlState, writeUrlState, type UrlState } from './url-state.ts'
+import { currentSearch, initialUrlState, writeUrlState, type UrlState } from './url-state.ts'
 
 export interface AppProps {
   source: SessionSource
@@ -18,10 +18,7 @@ export interface AppProps {
 
 export function App({ source, initialSearch }: AppProps) {
   const refs = useMemo(() => source.list(), [source])
-  const [state, setState] = useState<UrlState>(() => {
-    const defaults = { sessionIds: refs.map((r) => r.id), defaultSession: source.defaultId() }
-    return initialSearch === undefined ? readUrlState(defaults) : parseUrlState(initialSearch, defaults)
-  })
+  const [state, setState] = useState<UrlState>(() => initialUrlState(source, initialSearch ?? currentSearch()))
 
   useEffect(() => {
     writeUrlState(state)

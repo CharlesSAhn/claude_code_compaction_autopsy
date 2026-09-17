@@ -1,9 +1,113 @@
 # Compaction Autopsy
 
-Shows what Claude Code lost during context compaction and what happened afterward.
-Deterministic analysis of Claude Code JSONL transcripts, no LLM calls. Static React app with bundled demo data.
+Shows what Claude Code knew before a context compaction, what the summary kept, what was lost
+or weakened, where each item came from, and what happened after. The analysis is deterministic:
+token overlap and whole-token matching over a Claude Code JSONL transcript, no LLM calls. It is
+a static React app (Vite + TypeScript) with three demo sessions bundled into the build. Nothing
+is fetched at runtime and nothing is uploaded.
 
-`npm install` then `npm run check` (lint, typecheck, test) or `npm run dev`.
+## What the analysis does and doesn't do
+
+Five stages, in plain words:
+
+1. **Items.** Sentences a user typed before the compaction that read as a rule or a fact. In the
+   demo these are pre-labeled in the fixtures, anchors included. Extraction is the one stage the
+   URL does not exercise; it is specified in `docs/specs/algorithm-v1.md` and covered by tests.
+2. **Survival.** Each item is scored by token overlap against the best line of the compaction
+   summary. The status is PRESERVED, DEGRADED, or LOST. It is a statement about the summary text
+   only.
+3. **Evidence.** The matched summary passage with the matched phrases marked, the entities found
+   in it and anywhere in the summary, and the item's origin: message uuid, time, JSONL line.
+4. **Downstream.** The first later tool call that goes against an item's anchor: a path edited, a
+   forbidden token written, a style call made. The result is one of three: matched (the trace
+   shows the contract's `INCONSISTENT_LABEL`; the ledger's after column reads INCONSISTENT
+   ACTION with the tool and time), "none found" (the tool calls after the compaction were walked,
+   nothing hit; the ledger reads NONE FOUND), or "not checkable" (the item has no anchor to
+   check; the ledger reads NOT CHECKABLE).
+5. **Restatement.** Whether the user typed the rule again after the compaction, and whether the
+   matched action came before or after that.
+
+Stages 2 to 5 run in the browser on every load. The expected results live in test files the
+analyzer cannot see.
+
+What it does not do:
+
+- It does not read meaning. Token overlap cannot tell an inverted rule from a preserved one: a
+  summary that says the opposite of the rule with the same words scores as PRESERVED.
+- It tracks items per compaction only. A rule stated before the first compaction is not tracked
+  across a second one.
+- It does not assert a causal link. The tool shows the loss and the action, in order, and every
+  downstream result carries the contract's `CLOSING_LINE`.
+- It does not see survival outside the summary (auto-memory, a preserved segment), subagent
+  transcripts, or anything across sessions.
+- It does not accept uploads. The only sessions are the bundled fixtures.
+
+## The three demo sessions
+
+| id | label | provenance | what it shows |
+|---|---|---|---|
+| `healthy-run2` | Healthy compaction (run 2) | experiment-derived, run `run2` | A real scratch run. Four constraints, all PRESERVED verbatim; every downstream result "none found" or "not checkable". |
+| `constructed-ticket` | Constructed: the ticket survived, the rule about it did not | constructed, note: "based on a real event I can't show" | The summary keeps the ticket as a work item and drops the rule about it; a later comment call names the ticket, so that item is matched. |
+| `constructed-file-edit` | Constructed: the rule vanished, the file got edited, the user re-typed it | constructed, note: "constructed from the run 2 data: the file rule removed from the summary; the edit and the restatement are invented" | One LOST rule about a file, an Edit to that file after the compaction, then the user restating the rule. |
+
+The default demo is the ticket case, by the contract's rule: the highest-provenance session
+that has a downstream action. The healthy run ranks higher but has none.
+
+## Honesty
+
+- Constructed cases are constructed. Each session shows a provenance band: the kind in
+  capitals, then the run name for an experiment-derived session or the note, verbatim, for a
+  constructed one. The two loss cases exist because three real scratch runs produced no loss
+  (see the finding below). If a later experiment produces a real one, it replaces the
+  constructed case and the label changes.
+- Compaction behavior depends on the Claude Code version and the model. The facts line under
+  the session picker shows both, with the trigger, the token counts, and the boundary time.
+- No causation claim. A status describes the summary text. The downstream label describes one
+  later action. `CLOSING_LINE` is printed under every downstream result, and the healthy line
+  under question 5 appears only when no item is matched.
+- The footer on every view says the same thing: demo data is illustrative, items are
+  pre-labeled, survival, downstream, and restatement are computed in the browser.
+
+## Run locally
+
+```sh
+npm ci
+npm run check          # lint, typecheck, unit tests
+npm run build          # tsc -b && vite build, into dist/
+npx vite preview --strictPort --port 4173
+```
+
+The preview serves `dist/` at `http://localhost:4173`. Stop it with Ctrl-C.
+
+Browser checks, in a second terminal while the preview runs:
+
+```sh
+npm run e2e                                   # Playwright smoke test
+npm run screenshots -- http://localhost:4173  # four PNGs into screenshots/
+```
+
+`npm run e2e` uses the machine's Google Chrome through Playwright's `chrome` channel, so no
+browser download is needed. `BASE_URL` picks the target; the default is the preview above.
+`npm run screenshots -- <base url>` writes `1-landing.png`, `2-compaction-clicked.png`,
+`3-lost-trace.png`, and `4-story.png` into `screenshots/`, which is gitignored.
+
+## Deployed at
+
+URL: (set by T5-ship)
+
+## Layout of the repo
+
+- `src/domain`: the analysis, pure TypeScript with no imports from outside the folder; `index.ts` is its only public entry; `contract.ts` holds the frozen types and the two fixed strings.
+- `src/adapters`: the Claude Code JSONL adapter, session validation, and `SessionSource`, the one door demo and real sessions pass through.
+- `src/fixtures`: the three demo sessions as committed JSON, statically imported and validated at load.
+- `src/ui`: the React app: shell, autopsy panel, evidence drawer, story view, timeline. Never imports from `src/fixtures`.
+- `src/specs`: tests that enforce the architecture rules and check the fixtures against the contract.
+- `docs/contracts`: the contract, its meaning, and `FROZEN` with the hashes that lock it.
+- `docs/specs`: product, UI, algorithm, domain model, session file format, testing strategy.
+- `docs/tasks`: one file per task with acceptance criteria; `BACKLOG.md` holds what was deferred.
+- `docs/experiments`: the scratch runs and their findings.
+- `scripts`: fixture builders, the usage-time logger, the screenshot script, and `deploy-s3.sh`, a manual tool that is never part of `npm run build`.
+- `e2e`: the Playwright smoke test.
 
 ## Finding, 2026-09-16
 

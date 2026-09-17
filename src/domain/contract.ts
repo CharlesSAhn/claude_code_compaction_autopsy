@@ -156,6 +156,13 @@ export type ArtifactKind =
   | 'file_edit'
   | 'bash_write'
 
+/**
+ * How a downstream hit was found. `forbidden_path`: a file tool path equal to the anchor or
+ * ending in `/` + anchor, or a Bash write pattern applied to it. `forbidden_token` (v2): the
+ * normalized anchor present as a whole token of the normalized in-scope text, the same rule as
+ * entity presence in survival, never a substring; a class anchor matches its `PATTERNS` regex.
+ * `style_token`: the call name at a word boundary followed by `(`.
+ */
 export type Matcher = 'forbidden_path' | 'forbidden_token' | 'style_token'
 
 export type DownstreamResult = 'matched' | 'none_found' | 'none_matchable'

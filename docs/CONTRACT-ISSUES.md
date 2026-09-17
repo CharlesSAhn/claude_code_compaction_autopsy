@@ -2,7 +2,21 @@
 
 Log of every change to the frozen contract. One entry per refreeze: date, version, what changed, why.
 
-## v2 candidates (not changes; the contract is at v1)
+## v2 — 2026-09-16
+
+- Downstream forbidden-token matching is whole-token, the same rule as entity presence in
+  survival. v1 said "contains the anchor value" (algorithm-v1 step 8) and the reference used a
+  substring find, so `VLX-41271` in a commit message matched an item about `VLX-4127`. Ticket
+  ids share prefixes constantly: a realistic false positive on real data. Survival went
+  whole-token under ruling A; leaving downstream on "contains" made the contract inconsistent
+  with itself. Found by the T2-engine independent review. Fixtures are unaffected (the ticket
+  case uses a class anchor); the expected tests and the parity JSON are re-derived.
+- Regions are half-open windows both ways: a message at exactly a boundary's `ts` is after that
+  boundary. v1 said "not before the previous boundary" for the before window but "greater" for
+  the after window, so a boundary-timestamp message of the last boundary was in no region.
+  Found by the same review; the engine was fixed at `eec4b19`, the text now says so.
+
+## v3 candidates (not changes)
 
 - 2026-09-16, `sourceSessionId` on `Provenance` for `observed-sanitized` and
   `experiment-derived`: the raw session id (never a path) of the session a fixture was built

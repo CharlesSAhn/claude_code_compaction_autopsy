@@ -1,10 +1,12 @@
-# Contract v1 — reviewed, unfrozen
+# Contract v2
 
-What we will freeze. Types: `src/domain/contract.ts`. This page: their meaning. Procedure for
-computing the values: `docs/specs/algorithm-v1.md` (stages 1–5), referenced, not repeated.
-Reviewed 2026-09-16 (`docs/reviews/2026-09-16-contract-review.md`); not frozen. The fixture
-step is the first real consumer and may still change it. Freezing writes `docs/contracts/FROZEN`
-with the hashes of this file and the types file.
+Types: `src/domain/contract.ts`. This page: their meaning. Procedure for computing the values:
+`docs/specs/algorithm-v1.md` (stages 1–5), referenced, not repeated. Reviewed 2026-09-16
+(`docs/reviews/2026-09-16-contract-review.md`), frozen as v1 at the T1-fixtures close, refrozen
+as v2 on 2026-09-16 with two changes logged in `docs/CONTRACT-ISSUES.md`: a downstream
+forbidden-token match is whole-token, the same rule as survival; regions are half-open windows
+both ways. Freezing writes `docs/contracts/FROZEN` with the hashes of this file and the types
+file.
 
 Inside the freeze, because the fixtures' expected answers depend on them: every list in `WORDS`,
 every number in `THRESHOLDS` and `LIMITS`, every regex source in `PATTERNS`, the two fixed
@@ -95,11 +97,14 @@ rule, never by preference.
 
 ## Regions
 
-"Before" and "after" a boundary are by timestamp: ISO strings compare lexicographically, and
-the boundary record has its own timestamp. Before compaction `i` = messages with `ts` less than
-`compactions[i].ts` and not before the previous boundary; after = messages with `ts` greater,
-up to the next boundary. The reference implementation handles the first boundary only; the
-contract covers a list.
+"Before" and "after" a boundary are by timestamp: ISO strings compare lexicographically (one
+format, millisecond precision, as the adapter emits it), and the boundary record has its own
+timestamp. Regions are half-open windows (v2): before compaction `i` = messages with `ts` not
+less than the previous boundary's and less than `compactions[i].ts`; after = messages with `ts`
+not less than `compactions[i].ts` and less than the next boundary's. A message at exactly a
+boundary's `ts` is after that boundary, the after window of `i` is the before window of `i + 1`,
+and no message is in no region. The reference implementation handles the first boundary only;
+the contract covers a list.
 
 ## Downstream action
 
@@ -115,6 +120,11 @@ contract covers a list.
   `WORDS.writePatterns` is followed by it (`> path`, `>> path`, `sed -i … path`, `tee path`,
   `cp|mv|rm|touch|chmod … path`, `git rm|mv path`); `cat path 2>/dev/null` or running the
   script is not a write.
+- A forbidden-token match is whole-token (v2), the same rule as entity presence under
+  Statuses: the in-scope text and the anchor are normalized, and the anchor must be a token of
+  the text, not preceded or followed by a word character, `-`, or a dotted continuation.
+  `VLX-41271` and `XVLX-4127` are not `VLX-4127`; `vlx-4127` and `(VLX-4127)` are. A class
+  anchor matches its `PATTERNS` regex as before.
 - Checks, in order (algorithm stage 4): only negation items get anchors; anchors are concrete
   entities in the trigger clause, else one class anchor; the forbidden-token scope is the union
   of what the sentence's scope nouns map to (`WORDS.scopeNouns`, whole words, singular or

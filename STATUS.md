@@ -17,4 +17,4 @@ Time spent waiting on a question is excluded. Running total sums closed rows.
 | T4-autopsy | closed | c42998e | 2026-09-17T02:34:57Z | 2026-09-17T02:57:00Z | 17 | 92 |
 | T7-qa | closed | 7961861 | 2026-09-17T02:58:13Z | 2026-09-17T03:31:00Z | 24 | 116 |
 | T5-ship | closed | e308237 | 2026-09-17T11:13:29Z | 2026-09-17T11:29:30Z | 8 | 124 |
-| T8-polish | open | | | | | |
+| T8-polish | closed | 073e268 | 2026-09-17T11:29:30Z | 2026-09-17T11:47:06Z | 10 | 134 |

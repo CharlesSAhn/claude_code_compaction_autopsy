@@ -10,14 +10,15 @@ function compaction(ts: string): Compaction {
   return { boundaryUuid: 'b', ts, trigger: 'auto', preTokens: 10, summary: { uuid: 'summary', lines: ['x'] } }
 }
 
-const messages = [msg('a', '2026-01-01T00:00:01Z'), msg('b', '2026-01-01T00:00:02Z'), msg('c', '2026-01-01T00:00:03Z')]
+// Uniform millisecond ISO format, as the adapter emits it: the contract compares ts lexically.
+const messages = [msg('a', '2026-01-01T00:00:01.000Z'), msg('b', '2026-01-01T00:00:02.000Z'), msg('c', '2026-01-01T00:00:03.000Z')]
 
 describe('timeline layout', () => {
-  it('places the boundary after the last message at or before its timestamp', () => {
-    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:00Z'))).toBe(0)
-    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:02Z'))).toBe(2)
+  it('places the boundary before the first message at or after its timestamp, as the domain does', () => {
+    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:00.000Z'))).toBe(0)
+    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:02.000Z'))).toBe(1)
     expect(boundaryPosition(messages, compaction('2026-01-01T00:00:02.500Z'))).toBe(2)
-    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:09Z'))).toBe(3)
+    expect(boundaryPosition(messages, compaction('2026-01-01T00:00:09.000Z'))).toBe(3)
   })
 
   it('builds rows in order with the boundary row inserted, never a summary message', () => {
@@ -27,7 +28,7 @@ describe('timeline layout', () => {
       provenance: { kind: 'constructed', note: 'n' },
       claudeCodeVersion: '0',
       model: 'm',
-      messages: [...messages, msg('summary', '2026-01-01T00:00:04Z')],
+      messages: [...messages, msg('summary', '2026-01-01T00:00:04.000Z')],
       compactions: [compaction('2026-01-01T00:00:02.500Z')],
     }
     const rows = timelineRows(session)

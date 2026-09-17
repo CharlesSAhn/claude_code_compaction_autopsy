@@ -84,13 +84,14 @@ decimals) and re-derives the items with `items` stripped.
   full `PATTERNS.path`. The engine uses the contract pattern. No fixture carries a path class
   anchor, so the parity test cannot expose it; the reference is left as is and this is logged
   for the backlog (a class-anchor case would settle it).
-- Regions with more than one boundary: before compaction `i` is `ts < compactions[i].ts` and
-  `ts > compactions[i-1].ts`; after is `ts > compactions[i].ts` and `ts < compactions[i+1].ts`.
-  The reference handles the first boundary only; `src/domain/analyze.test.ts` covers two.
+- Regions with more than one boundary are half-open windows: before compaction `i` is
+  `ts >= compactions[i-1].ts` and `ts < compactions[i].ts`; after is `ts >= compactions[i].ts`
+  and `ts < compactions[i+1].ts`. A message at exactly a boundary's ts is after that boundary
+  (review fix, 2026-09-16; the contract's "greater" for after is aligned in the v2 refreeze).
+  The reference handles the first boundary only; `src/domain/analyze.test.ts` covers two
+  boundaries and the equal-timestamp edge.
 
 ## Requests
 
-- `tsconfig.node.json` still lists `vitest.pending.config.ts` in `include` (file deleted here;
-  `tsc -b` passes). Owner of the root configs: drop it.
-- `src/specs/fixtures.test.ts` header comment says expected results live in `src/domain/pending`;
-  they are now `src/domain/*.expected.test.ts`. Comment only.
+- (done by the integrator, d466d24) `tsconfig.node.json` no longer lists
+  `vitest.pending.config.ts`; the `src/specs/fixtures.test.ts` header names the new location.

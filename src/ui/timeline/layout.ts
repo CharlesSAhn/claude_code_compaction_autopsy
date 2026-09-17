@@ -10,13 +10,14 @@ export type TimelineRow =
 
 /**
  * Index in `messages` before which the boundary bar is placed: the count of leading messages
- * whose timestamp is at or before the compaction's. Messages are in session order.
+ * whose timestamp is before the compaction's. ISO strings compare lexicographically, the same
+ * rule as the domain's regions, so a message at exactly the boundary's ts is drawn after the
+ * bar. Messages are in session order.
  */
 export function boundaryPosition(messages: readonly Message[], compaction: Compaction): number {
-  const at = Date.parse(compaction.ts)
   let n = 0
   for (const m of messages) {
-    if (Date.parse(m.ts) <= at) n += 1
+    if (m.ts < compaction.ts) n += 1
     else break
   }
   return n

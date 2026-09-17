@@ -93,3 +93,28 @@ describe('analyze, two boundaries', () => {
     expect(again.reports).toEqual(reports)
   })
 })
+
+describe('analyze, messages at exactly a boundary timestamp', () => {
+  // h0 before the first boundary; hb and e at exactly the first boundary's ts.
+  const edge: Session = {
+    ...session,
+    id: 'edge',
+    messages: [human('h0', 1, 1, RULE_A), human('hb', 10, 10, RULE_B), edit('e', 10, 11, '/repo/scripts/rotate_keys.sh')],
+  }
+  const { reports } = analyze(edge)
+
+  it('a message at the boundary ts is after that boundary and before the next', () => {
+    expect(reports[0].items.map((r) => r.item.id)).toEqual(['0:1:0'])
+    expect(reports[1].items.map((r) => [r.item.id, r.item.text])).toEqual([['1:10:0', RULE_B]])
+  })
+
+  it('a tool call at the boundary ts is walked as a downstream action of that boundary', () => {
+    expect(reports[0].items[0].downstream.result).toBe('matched')
+    expect(reports[0].items[0].downstream.hit).toMatchObject({ toolUseId: 'toolu-e', ts: T(10) })
+  })
+
+  it('no message is in no region', () => {
+    const seen = reports.flatMap((r) => r.items.map((i) => i.item.origin.messageUuid))
+    expect(seen.sort()).toEqual(['h0', 'hb'])
+  })
+})

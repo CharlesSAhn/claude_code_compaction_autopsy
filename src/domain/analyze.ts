@@ -3,9 +3,11 @@
  * carries no items. The types and semantics it satisfies are frozen in contract.ts and
  * docs/contracts/contract.md; this function bends to them, not the other way round.
  *
- * Regions are by timestamp (contract, "Regions"): before compaction i is every message with ts
- * below compactions[i].ts and above the previous boundary; after is every message with ts
- * above it, up to the next boundary.
+ * Regions are by timestamp (contract, "Regions"), as half-open windows: before compaction i is
+ * every message with ts from the previous boundary (inclusive) up to compactions[i].ts
+ * (exclusive); after is every message from compactions[i].ts (inclusive) up to the next
+ * boundary (exclusive). A message at exactly a boundary's ts is after that boundary, and
+ * after(i) is the same window as before(i + 1). ISO strings compare lexicographically.
  */
 import { CLOSING_LINE, type AnalyzedSession, type Item, type ItemReport, type Message, type Report, type Session } from './contract'
 import { firstInconsistent, type PostTool } from './actions'
@@ -16,13 +18,13 @@ import { scoreItem } from './survival'
 function before(session: Session, i: number): Message[] {
   const hi = session.compactions[i].ts
   const lo = i > 0 ? session.compactions[i - 1].ts : undefined
-  return session.messages.filter((m) => m.ts < hi && (lo === undefined || m.ts > lo))
+  return session.messages.filter((m) => m.ts < hi && (lo === undefined || m.ts >= lo))
 }
 
 function after(session: Session, i: number): Message[] {
   const lo = session.compactions[i].ts
   const hi = i + 1 < session.compactions.length ? session.compactions[i + 1].ts : undefined
-  return session.messages.filter((m) => m.ts > lo && (hi === undefined || m.ts < hi))
+  return session.messages.filter((m) => m.ts >= lo && (hi === undefined || m.ts < hi))
 }
 
 function itemsFor(session: Session, i: number): Item[] {

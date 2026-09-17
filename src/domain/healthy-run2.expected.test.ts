@@ -9,9 +9,9 @@
  * the contract it implements is the one frozen at the end of that task. Nothing here is typed by hand.
  */
 import { describe, expect, it } from 'vitest'
-import { CLOSING_LINE, type Session } from '../contract'
-import { analyze } from '../index'
-import { fixtures } from '../../fixtures/index.ts'
+import { CLOSING_LINE, type Session } from './contract'
+import { analyze } from './index'
+import { fixtures } from '../fixtures/index.ts'
 
 
 const session = fixtures.find((s) => s.id === 'healthy-run2') as Session

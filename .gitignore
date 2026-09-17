@@ -26,3 +26,8 @@ dist-ssr
 # Python bytecode from experiment generators
 __pycache__/
 *.pyc
+
+# Playwright output
+screenshots/
+test-results/
+playwright-report/

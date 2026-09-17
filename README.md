@@ -6,6 +6,20 @@ token overlap and whole-token matching over a Claude Code JSONL transcript, no L
 a static React app (Vite + TypeScript) with three demo sessions bundled into the build. Nothing
 is fetched at runtime and nothing is uploaded.
 
+## Screenshots
+
+![Story view of the ticket case: four ribbons cross the compaction band, one DEGRADED ribbon links to a later mcp__tracker__save_comment call](docs/images/story-ticket-case.png)
+
+The story view of the ticket case. Each ribbon is one item from before the compaction. The
+DEGRADED one, "dont reference ticket ids in code comments or commit messages", links to the
+first later action that is inconsistent with it.
+
+![Evidence drawer for the DEGRADED item: the summary passage with the ticket id marked, the thresholds, the after block, and the full summary with line 6 highlighted](docs/images/evidence-drawer-degraded.png)
+
+The evidence drawer for that item: the summary passage with its marks, the thresholds, the
+downstream action with the closing line, and the full summary with the matched line
+highlighted.
+
 ## What the analysis does and doesn't do
 
 Five stages, in plain words:
